@@ -57,10 +57,12 @@ export default function ExceptionsQueue() {
       const response = await api.get(`/api/exceptions?${params}`)
       const data: QueueResponse = response.data
       
-      setIssues(data.issues)
-      setTotalCount(data.totalCount)
+      setIssues(data.issues || [])
+      setTotalCount(data.totalCount || 0)
     } catch (error) {
       console.error('Error loading issues:', error)
+      setIssues([])
+      setTotalCount(0)
     } finally {
       setLoading(false)
     }
@@ -72,6 +74,14 @@ export default function ExceptionsQueue() {
       setStatistics(response.data)
     } catch (error) {
       console.error('Error loading statistics:', error)
+      setStatistics({
+        totalIssues: 0,
+        openIssues: 0,
+        resolvedIssues: 0,
+        highSeverityIssues: 0,
+        mediumSeverityIssues: 0,
+        lowSeverityIssues: 0
+      })
     }
   }
 
