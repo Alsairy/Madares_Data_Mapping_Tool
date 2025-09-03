@@ -53,7 +53,9 @@ public class PipelineService : IPipelineService
                 else
                 {
                     var row = dt.NewRow();
-                    for (int i=0;i<cols.Length;i++) row[i] = cols[i];
+                    // Ensure we don't try to access more columns than exist in the DataTable
+                    int maxCols = Math.Min(cols.Length, dt.Columns.Count);
+                    for (int i=0;i<maxCols;i++) row[i] = cols[i];
                     dt.Rows.Add(row);
                 }
             }

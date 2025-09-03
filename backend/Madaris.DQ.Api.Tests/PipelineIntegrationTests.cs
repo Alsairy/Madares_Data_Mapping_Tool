@@ -160,4 +160,174 @@ public class PipelineIntegrationTests : IClassFixture<WebApplicationFactory<Prog
         Assert.True(result1.StudentsPrepared > 0);
         Assert.True(result2.StudentsPrepared > 0);
     }
+
+    [Fact]
+    public async Task LinksExport_HeaderOrder_IsStable()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
+
+        var tarkhees = CreateSampleTarkheesFile();
+        var noor = CreateSampleNoorFile();
+        var madaris = CreateSampleMadarisFile();
+        var result = await pipelineService.RunAsync(tarkhees, noor, madaris, "header-check");
+
+        var linksPath = await pipelineService.GetExportPathAsync(result.JobId, "student_parent_links.xlsx");
+        Assert.True(File.Exists(linksPath));
+
+        using var wb = new XLWorkbook(linksPath);
+        var ws = wb.Worksheet("student_parent_links");
+        var headers = ws.Row(1).Cells(1, 8).Select(c => c.GetString()).ToArray();
+
+        Assert.Equal(new[]{
+            "Ministry_Student_ID","Ministry_Parent_ID","Mapped_CR","Mapped_Madaris_School_ID",
+            "Student_Name","Parent_Name","Match_Method","Confidence"
+        }, headers);
+    }
+
+    [Fact]
+    public async Task Exports_Sanitize_FormulaInjection_InTextCells()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
+
+        var tarkheesCsv =
+            "Unified_CR_Number,Ministry_School_ID,License_Number,Institution_Name\n" +
+            "1234567890,MIN001,LIC001,مدرسة =اختبار\n";
+        var tarkhees = ToFormFile(tarkheesCsv, "tarkhees.csv");
+
+        var noorCsv =
+            "Ministry_School_ID,Ministry_Student_ID,FullName_AR,Ministry_Parent_ID,Parent_Name\n" +
+            "MIN001,=STU001,+StudentName,PAR+001,-ParentName\n";
+        var noor = ToFormFile(noorCsv, "noor.csv");
+
+        var madarisCsv =
+            "CR,Madaris_School_ID,School_Name_AR\n" +
+            "1234567890,MAD001,مدرسة -اختبار\n";
+        var madaris = ToFormFile(madarisCsv, "madaris.csv");
+
+        var result = await pipelineService.RunAsync(tarkhees, noor, madaris, "sanitize-check");
+
+        var studentsPath = await pipelineService.GetExportPathAsync(result.JobId, "students_master.xlsx");
+        Assert.True(File.Exists(studentsPath));
+        using (var wbs = new XLWorkbook(studentsPath))
+        {
+            var ws = wbs.Worksheet("students_master");
+            var headerToIndex = ws.Row(1).Cells().ToDictionary(c => c.GetString(), c => c.Address.ColumnNumber);
+            int row = 2;
+
+            var studentIdCell = ws.Cell(row, headerToIndex["Ministry_Student_ID"]);
+            var studentNameCell = ws.Cell(row, headerToIndex["Student_Name"]);
+
+            Assert.Equal("=STU001", studentIdCell.GetString());
+            Assert.Equal("+StudentName", studentNameCell.GetString());
+            Assert.Equal(XLDataType.Text, studentIdCell.DataType);
+            Assert.Equal(XLDataType.Text, studentNameCell.DataType);
+        }
+
+        var parentsPath = await pipelineService.GetExportPathAsync(result.JobId, "parents_master.xlsx");
+        Assert.True(File.Exists(parentsPath));
+        using (var wbp = new XLWorkbook(parentsPath))
+        {
+            var ws = wbp.Worksheet("parents_master");
+            var headerToIndex = ws.Row(1).Cells().ToDictionary(c => c.GetString(), c => c.Address.ColumnNumber);
+            int row = 2;
+
+            var parentIdCell = ws.Cell(row, headerToIndex["Ministry_Parent_ID"]);
+            var parentNameCell = ws.Cell(row, headerToIndex["Parent_Name"]);
+
+            Assert.Equal("PAR+001", parentIdCell.GetString());
+            Assert.Equal("-ParentName", parentNameCell.GetString());
+            Assert.Equal(XLDataType.Text, parentIdCell.DataType);
+            Assert.Equal(XLDataType.Text, parentNameCell.DataType);
+        }
+    }
+
+    [Fact]
+    public async Task Exports_AllTextCells_AreSanitized_AgainstFormulaInjection()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
+
+        var tarkheesCsv =
+            "Unified_CR_Number,Ministry_School_ID,License_Number,Institution_Name\n" +
+            "1234567890,MIN001,LIC001,Safe School\n" +
+            "2345678901,MIN002,LIC002,=BadName\n";
+        var noorCsv =
+            "Ministry_School_ID,Ministry_Student_ID,FullName_AR,Ministry_Parent_ID,Parent_Name\n" +
+            "MIN001,STU001,طالب آمن,PAR001,ولي أمر آمن\n" +
+            "MIN002,@MIN002,=StudentName,-PAR002,+ParentName\n";
+        var madarisCsv =
+            "CR,Madaris_School_ID,School_Name_AR\n" +
+            "1234567890,MAD001,مدرسة 1\n" +
+            "2345678901,MAD002,مدرسة 2\n";
+
+        var tarkhees = ToFormFile(tarkheesCsv, "tarkhees.csv");
+        var noor = ToFormFile(noorCsv, "noor.csv");
+        var madaris = ToFormFile(madarisCsv, "madaris.csv");
+
+        var result = await pipelineService.RunAsync(tarkhees, noor, madaris, "global-sanitize");
+
+        var studentsPath = await pipelineService.GetExportPathAsync(result.JobId, "students_master.xlsx");
+        Assert.True(File.Exists(studentsPath));
+        using (var wbs = new XLWorkbook(studentsPath))
+        {
+            var ws = wbs.Worksheet("students_master");
+            AssertAllStringCellsSanitized(ws, maxDataRows: 100);
+        }
+
+        var parentsPath = await pipelineService.GetExportPathAsync(result.JobId, "parents_master.xlsx");
+        Assert.True(File.Exists(parentsPath));
+        using (var wbp = new XLWorkbook(parentsPath))
+        {
+            var ws = wbp.Worksheet("parents_master");
+            AssertAllStringCellsSanitized(ws, maxDataRows: 100);
+        }
+    }
+
+
+    private static void AssertAllStringCellsSanitized(IXLWorksheet ws, int maxDataRows)
+    {
+        var headerRow = ws.Row(1);
+        var lastCol = headerRow.LastCellUsed().Address.ColumnNumber;
+        var lastRow = Math.Min(ws.LastRowUsed().RowNumber(), 1 + maxDataRows);
+
+        for (int r = 2; r <= lastRow; r++)
+        {
+            for (int c = 1; c <= lastCol; c++)
+            {
+                var cell = ws.Cell(r, c);
+                var text = cell.GetString();
+                if (string.IsNullOrEmpty(text)) continue;
+
+                if (IsPotentialFormula(text))
+                {
+                    Xunit.Assert.Equal(XLDataType.Text, cell.DataType);
+                }
+            }
+        }
+    }
+
+    private static bool IsPotentialFormula(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return false;
+        switch (s[0])
+        {
+            case '=': case '+': case '-': case '@':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static IFormFile ToFormFile(string csv, string filename)
+    {
+        var bytes = Encoding.UTF8.GetBytes(csv);
+        var stream = new MemoryStream(bytes);
+        return new FormFile(stream, 0, bytes.Length, Path.GetFileNameWithoutExtension(filename), filename)
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "text/csv"
+        };
+    }
 }
