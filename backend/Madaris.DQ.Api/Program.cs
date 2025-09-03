@@ -39,7 +39,11 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<FileUploadOperationFilter>();
 });
 builder.Services.AddCors(options => {
-    options.AddPolicy("all", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+    options.AddPolicy("all", p => p
+        .WithOrigins("https://data-mapping-assessment-app-x5jb4izt.devinapps.com")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
 });
 
 var app = builder.Build();
