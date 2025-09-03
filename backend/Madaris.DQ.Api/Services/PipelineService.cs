@@ -132,8 +132,8 @@ public class PipelineService : IPipelineService
         }
 
         // Prepare output workbooks
-        var studentsWb = new XLWorkbook();
-        var parentsWb = new XLWorkbook();
+        using var studentsWb = new XLWorkbook();
+        using var parentsWb = new XLWorkbook();
         var studentsWs = studentsWb.Worksheets.Add("students_master");
         var parentsWs = parentsWb.Worksheets.Add("parents_master");
 
