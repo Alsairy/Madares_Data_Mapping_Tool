@@ -3,6 +3,7 @@ using System.Text;
 using ClosedXML.Excel;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Madaris.DQ.Api.Data;
 using Madaris.DQ.Api.Models;
 using Madaris.DQ.Api.Utils;
@@ -13,9 +14,15 @@ public class PipelineService : IPipelineService
 {
     private readonly AppDbContext _db;
     private readonly IWebHostEnvironment _env;
-    public PipelineService(AppDbContext db, IWebHostEnvironment env)
+    private readonly IMatchingService _matching;
+    private readonly IProfilesService _profiles;
+    
+    public PipelineService(AppDbContext db, IWebHostEnvironment env, IMatchingService matching, IProfilesService profiles)
     {
-        _db = db; _env = env;
+        _db = db; 
+        _env = env;
+        _matching = matching;
+        _profiles = profiles;
         System.Text.Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
     }
 
@@ -69,36 +76,36 @@ public class PipelineService : IPipelineService
         var m = dsMadaris.Tables[0];
 
         // Normalize column names for robust matching
-        string norm(string s) => s.Trim().ToLowerInvariant().Replace(\" \", \"_\");
+        string norm(string s) => s.Trim().ToLowerInvariant().Replace(" ", "_");
 
         var tCols = t.Columns.Cast<DataColumn>().ToDictionary(c => norm(c.ColumnName), c => c.ColumnName);
         var nCols = n.Columns.Cast<DataColumn>().ToDictionary(c => norm(c.ColumnName), c => c.ColumnName);
         var mCols = m.Columns.Cast<DataColumn>().ToDictionary(c => norm(c.ColumnName), c => c.ColumnName);
 
         // Expected keys (with fallbacks)
-        string tCR = tCols.ContainsKey(\"unified_cr_number\") ? tCols[\"unified_cr_number\"] :
-                     tCols.ContainsKey(\"cr\") ? tCols[\"cr\"] : t.Columns[0].ColumnName;
-        string tMinSchool = tCols.ContainsKey(\"ministry_school_id\") ? tCols[\"ministry_school_id\"] :
-                            tCols.ContainsKey(\"school_id\") ? tCols[\"school_id\"] : null;
-        string tLicenseNo = tCols.ContainsKey(\"license_number\") ? tCols[\"license_number\"] : null;
+        string tCR = tCols.ContainsKey("unified_cr_number") ? tCols["unified_cr_number"] :
+                     tCols.ContainsKey("cr") ? tCols["cr"] : t.Columns[0].ColumnName;
+        string tMinSchool = tCols.ContainsKey("ministry_school_id") ? tCols["ministry_school_id"] :
+                            tCols.ContainsKey("school_id") ? tCols["school_id"] : null;
+        string tLicenseNo = tCols.ContainsKey("license_number") ? tCols["license_number"] : null;
 
-        string nMinSchool = nCols.ContainsKey(\"ministry_school_id\") ? nCols[\"ministry_school_id\"] :
-                            nCols.ContainsKey(\"school_id\") ? nCols[\"school_id\"] : null;
-        string nStudId = nCols.ContainsKey(\"ministry_student_id\") ? nCols[\"ministry_student_id\"] :
-                         nCols.ContainsKey(\"student_id\") ? nCols[\"student_id\"] : null;
-        string nStudName = nCols.ContainsKey(\"fullname_ar\") ? nCols[\"fullname_ar\"] :
-                           nCols.ContainsKey(\"student_name\") ? nCols[\"student_name\"] : n.Columns[0].ColumnName;
-        string nParentId = nCols.ContainsKey(\"ministry_parent_id\") ? nCols[\"ministry_parent_id\"] :
-                           nCols.ContainsKey(\"parent_id\") ? nCols[\"parent_id\"] : null;
-        string nParentName = nCols.ContainsKey(\"parent_name\") ? nCols[\"parent_name\"] :
-                             nCols.ContainsKey(\"fullname_parent_ar\") ? nCols[\"fullname_parent_ar\"] : null;
+        string nMinSchool = nCols.ContainsKey("ministry_school_id") ? nCols["ministry_school_id"] :
+                            nCols.ContainsKey("school_id") ? nCols["school_id"] : null;
+        string nStudId = nCols.ContainsKey("ministry_student_id") ? nCols["ministry_student_id"] :
+                         nCols.ContainsKey("student_id") ? nCols["student_id"] : null;
+        string nStudName = nCols.ContainsKey("fullname_ar") ? nCols["fullname_ar"] :
+                           nCols.ContainsKey("student_name") ? nCols["student_name"] : n.Columns[0].ColumnName;
+        string nParentId = nCols.ContainsKey("ministry_parent_id") ? nCols["ministry_parent_id"] :
+                           nCols.ContainsKey("parent_id") ? nCols["parent_id"] : null;
+        string nParentName = nCols.ContainsKey("parent_name") ? nCols["parent_name"] :
+                             nCols.ContainsKey("fullname_parent_ar") ? nCols["fullname_parent_ar"] : null;
 
-        string mCR = mCols.ContainsKey(\"cr\") ? mCols[\"cr\"] :
-                     mCols.ContainsKey(\"commercial_registration\") ? mCols[\"commercial_registration\"] : m.Columns[0].ColumnName;
-        string mMadarisId = mCols.ContainsKey(\"madaris_school_id\") ? mCols[\"madaris_school_id\"] :
-                            mCols.ContainsKey(\"school_id\") ? mCols[\"school_id\"] : null;
-        string mSchoolName = mCols.ContainsKey(\"school_name_ar\") ? mCols[\"school_name_ar\"] :
-                             mCols.ContainsKey(\"name_ar\") ? mCols[\"name_ar\"] : m.Columns[0].ColumnName;
+        string mCR = mCols.ContainsKey("cr") ? mCols["cr"] :
+                     mCols.ContainsKey("commercial_registration") ? mCols["commercial_registration"] : m.Columns[0].ColumnName;
+        string mMadarisId = mCols.ContainsKey("madaris_school_id") ? mCols["madaris_school_id"] :
+                            mCols.ContainsKey("school_id") ? mCols["school_id"] : null;
+        string mSchoolName = mCols.ContainsKey("school_name_ar") ? mCols["school_name_ar"] :
+                             mCols.ContainsKey("name_ar") ? mCols["name_ar"] : m.Columns[0].ColumnName;
 
         // Build Tarkhees map: MinistrySchoolId -> CR
         var minSchoolToCR = new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
@@ -118,22 +125,22 @@ public class PipelineService : IPipelineService
         foreach (DataRow r in m.Rows)
         {
             var cr = r[mCR]?.ToString()?.Trim();
-            var madarisId = mMadarisId != null ? r[mMadarisId]?.ToString()?.Trim() : \"\";
-            var name = r[mSchoolName]?.ToString()?.Trim() ?? \"\";
+            var madarisId = mMadarisId != null ? r[mMadarisId]?.ToString()?.Trim() : "";
+            var name = r[mSchoolName]?.ToString()?.Trim() ?? "";
             if (!string.IsNullOrEmpty(cr))
-                crToMadaris[cr] = (madarisId ?? \"\", name);
+                crToMadaris[cr] = (madarisId ?? "", name);
         }
 
         // Prepare output workbooks
         var studentsWb = new XLWorkbook();
         var parentsWb = new XLWorkbook();
-        var studentsWs = studentsWb.Worksheets.Add(\"students_master\");
-        var parentsWs = parentsWb.Worksheets.Add(\"parents_master\");
+        var studentsWs = studentsWb.Worksheets.Add("students_master");
+        var parentsWs = parentsWb.Worksheets.Add("parents_master");
 
         // Headers
-        var studHeaders = new[]{\"Ministry_Student_ID\",\"Student_Name\",\"Mapped_CR\",\"Mapped_Madaris_School_ID\",\"Mapped_Madaris_School_Name\",\"Ministry_School_ID\",\"Match_Method\",\"Confidence\",\"Issues\"};
+        var studHeaders = new[]{"Ministry_Student_ID","Student_Name","Mapped_CR","Mapped_Madaris_School_ID","Mapped_Madaris_School_Name","Ministry_School_ID","Match_Method","Confidence","Issues"};
         for (int i=0;i<studHeaders.Length;i++) studentsWs.Cell(1, i+1).Value = studHeaders[i];
-        var parHeaders = new[]{\"Ministry_Parent_ID\",\"Parent_Name\",\"Mapped_CR\",\"Mapped_Madaris_School_ID\",\"Mapped_Madaris_School_Name\",\"Ministry_School_ID\",\"Match_Method\",\"Confidence\",\"Issues\"};
+        var parHeaders = new[]{"Ministry_Parent_ID","Parent_Name","Mapped_CR","Mapped_Madaris_School_ID","Mapped_Madaris_School_Name","Ministry_School_ID","Match_Method","Confidence","Issues"};
         for (int i=0;i<parHeaders.Length;i++) parentsWs.Cell(1, i+1).Value = parHeaders[i];
 
         int srow = 2, prow = 2;
@@ -147,8 +154,8 @@ public class PipelineService : IPipelineService
             var studName = r[nStudName]?.ToString()?.Trim();
 
             // School mapping
-            string matchMethod = \"\"; double confidence = 0.0; string issues = \"\";
-            string mappedCR = \"\"; string mappedMadarisId = \"\"; string mappedMadarisName = \"\";
+            string matchMethod = ""; double confidence = 0.0; string issues = "";
+            string mappedCR = ""; string mappedMadarisId = ""; string mappedMadarisName = "";
 
             if (!string.IsNullOrEmpty(minSch) && minSchoolToCR.TryGetValue(minSch, out var cr))
             {
@@ -156,17 +163,17 @@ public class PipelineService : IPipelineService
                 if (crToMadaris.TryGetValue(cr, out var mm))
                 {
                     mappedMadarisId = mm.madarisId; mappedMadarisName = mm.name;
-                    matchMethod = \"TarkheesBridge\"; confidence = 0.99;
+                    matchMethod = "TarkheesBridge"; confidence = 0.99;
                     schoolsMatched++;
                 }
                 else
                 {
-                    matchMethod = \"CRNotInMadaris\"; confidence = 0.8; issues = \"CR missing in Madaris extract\"; exceptions++;
+                    matchMethod = "CRNotInMadaris"; confidence = 0.8; issues = "CR missing in Madaris extract"; exceptions++;
                 }
             }
             else
             {
-                matchMethod = \"NoMinistrySchoolIdOrNoBridge\"; confidence = 0.5; issues = \"Missing or unmapped Ministry School ID\"; exceptions++;
+                matchMethod = "NoMinistrySchoolIdOrNoBridge"; confidence = 0.5; issues = "Missing or unmapped Ministry School ID"; exceptions++;
             }
 
             if (!string.IsNullOrEmpty(studId))
@@ -176,7 +183,7 @@ public class PipelineService : IPipelineService
                 studentsWs.Cell(srow,3).Value = mappedCR;
                 studentsWs.Cell(srow,4).Value = mappedMadarisId;
                 studentsWs.Cell(srow,5).Value = mappedMadarisName;
-                studentsWs.Cell(srow,6).Value = minSch ?? \"\";
+                studentsWs.Cell(srow,6).Value = minSch ?? "";
                 studentsWs.Cell(srow,7).Value = matchMethod;
                 studentsWs.Cell(srow,8).Value = confidence;
                 studentsWs.Cell(srow,9).Value = issues;
@@ -187,7 +194,7 @@ public class PipelineService : IPipelineService
             if (!string.IsNullOrEmpty(nParentId))
             {
                 var pid = r[nParentId]?.ToString()?.Trim();
-                var pname = !string.IsNullOrEmpty(nParentName) ? r[nParentName]?.ToString()?.Trim() : \"\";
+                var pname = !string.IsNullOrEmpty(nParentName) ? r[nParentName]?.ToString()?.Trim() : "";
                 if (!string.IsNullOrEmpty(pid))
                 {
                     parentsWs.Cell(prow,1).Value = pid;
@@ -195,7 +202,7 @@ public class PipelineService : IPipelineService
                     parentsWs.Cell(prow,3).Value = mappedCR;
                     parentsWs.Cell(prow,4).Value = mappedMadarisId;
                     parentsWs.Cell(prow,5).Value = mappedMadarisName;
-                    parentsWs.Cell(prow,6).Value = minSch ?? \"\";
+                    parentsWs.Cell(prow,6).Value = minSch ?? "";
                     parentsWs.Cell(prow,7).Value = matchMethod;
                     parentsWs.Cell(prow,8).Value = confidence;
                     parentsWs.Cell(prow,9).Value = issues;
@@ -209,40 +216,57 @@ public class PipelineService : IPipelineService
         parentsWs.Columns().AdjustToContents();
 
         // Save exports
-        var studentsPath = Path.Combine(exportDir, \"students_master.xlsx\");
-        var parentsPath = Path.Combine(exportDir, \"parents_master.xlsx\");
+        var studentsPath = Path.Combine(exportDir, "students_master.xlsx");
+        var parentsPath = Path.Combine(exportDir, "parents_master.xlsx");
         studentsWb.SaveAs(studentsPath);
         parentsWb.SaveAs(parentsPath);
 
         // Mapping report (basic CSV)
-        var mappingReport = Path.Combine(exportDir, \"mapping_report.csv\");
-        await File.WriteAllTextAsync(mappingReport, \"metric,value\\n\" +
-            $\"schools_matched,{schoolsMatched}\\n\" +
-            $\"students_prepared,{studentsPrepared}\\n\" +
-            $\"parents_prepared,{parentsPrepared}\\n\" +
-            $\"exceptions,{exceptions}\\n\"
+        var mappingReport = Path.Combine(exportDir, "mapping_report.csv");
+        await File.WriteAllTextAsync(mappingReport, "metric,value\n" +
+            $"schools_matched,{schoolsMatched}\n" +
+            $"students_prepared,{studentsPrepared}\n" +
+            $"parents_prepared,{parentsPrepared}\n" +
+            $"exceptions,{exceptions}\n"
         );
 
         // Register batch for audit
         var batch = new BatchLoadEntity {
             Id = jobId,
-            Source = \"PipelineRun\",
-            FileName = $\"{tarkheesLicense.FileName}|{noorRoster.FileName}|{madarisSchools.FileName}\",
+            Source = "PipelineRun",
+            FileName = $"{tarkheesLicense.FileName}|{noorRoster.FileName}|{madarisSchools.FileName}",
             UploadedAtUtc = DateTime.UtcNow,
             UploadedBy = uploadedBy,
-            Status = \"Completed\"
+            Status = "Completed"
         };
         _db.Batches.Add(batch);
         await _db.SaveChangesAsync();
 
-        return new PipelineResult(jobId, schoolsMatched, studentsPrepared, parentsPrepared, exceptions);
+        var matchingToken = await _matching.RunMatchingAsync(jobId);
+        var profile = await _profiles.GetBatchProfileAsync(jobId);
+        
+        var result = new PipelineResult(jobId, schoolsMatched, studentsPrepared, parentsPrepared, exceptions);
+        
+        var totalRecords = studentsPrepared + parentsPrepared;
+        if (totalRecords > 0)
+        {
+            result.OverallDqScore = Math.Max(0.0, 1.0 - (double)exceptions / totalRecords);
+        }
+
+        return result;
     }
+
 
     public Task<string> GetExportPathAsync(Guid jobId, string exportName)
     {
-        var dir = Path.Combine(_env.ContentRootPath, \"exports\", jobId.ToString());
+        var dir = Path.Combine(_env.ContentRootPath, "exports", jobId.ToString());
         var path = Path.Combine(dir, exportName);
         if (!File.Exists(path)) throw new FileNotFoundException(path);
         return Task.FromResult(path);
+    }
+
+    public async Task<BatchLoadEntity?> GetBatchAsync(Guid jobId)
+    {
+        return await _db.Batches.FirstOrDefaultAsync(b => b.Id == jobId);
     }
 }

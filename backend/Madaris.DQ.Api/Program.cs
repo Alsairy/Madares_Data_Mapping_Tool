@@ -7,8 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Config
 builder.Services.AddDbContext<AppDbContext>(opts =>
 {
-    var cs = builder.Configuration.GetConnectionString("SqlServer") ?? "Server=localhost;Database=MadarisDQ;User Id=sa;Password=YourStrong!Passw0rd;TrustServerCertificate=True;";
-    opts.UseSqlServer(cs);
+    opts.UseInMemoryDatabase("MadarisDQ");
 });
 
 builder.Services.AddScoped<IIngestionService, IngestionService>();

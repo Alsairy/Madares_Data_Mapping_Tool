@@ -14,6 +14,7 @@ public class StudentEntity
     public string? EmailsCsv { get; set; }
     public string? Address { get; set; }
     public Guid? CurrentSchoolRefId { get; set; }
+    public Guid? SchoolId { get; set; }
     public SchoolEntity? CurrentSchool { get; set; }
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 }

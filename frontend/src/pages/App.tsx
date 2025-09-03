@@ -1,10 +1,11 @@
 import { Link, Routes, Route } from 'react-router-dom'
-import UploadWizard from '../pages/UploadWizard'
-import DQDashboard from '../pages/DQDashboard'
-import ExceptionsQueue from '../pages/ExceptionsQueue'
-import RecordCompare from '../pages/RecordCompare'
-import ImpactPreview from '../pages/ImpactPreview'
-import PipelineRun from '../pages/PipelineRun'
+import UploadWizard from './UploadWizard'
+import DQDashboard from './DQDashboard'
+import ExceptionsQueue from './ExceptionsQueue'
+import RecordCompare from './RecordCompare'
+import ImpactPreview from './ImpactPreview'
+import PipelineRun from './PipelineRun'
+import Results from './Results'
 
 export default function App() {
   return (
@@ -15,7 +16,8 @@ export default function App() {
         <Link to='/dq'>DQ Dashboard</Link>
         <Link to='/exceptions'>Exceptions</Link>
         <Link to='/compare'>Record Compare</Link>
-        <Link to='/impact'>Impact Preview</Link><Link to='/pipeline'>Pipeline</Link>
+        <Link to='/impact'>Impact Preview</Link>
+        <Link to='/pipeline'>Pipeline</Link>
       </nav>
       <div style={{marginTop:20}}>
         <Routes>
@@ -24,6 +26,7 @@ export default function App() {
           <Route path='/exceptions' element={<ExceptionsQueue/>} />
           <Route path='/compare' element={<RecordCompare/>} />
           <Route path='/impact' element={<ImpactPreview/>} />
+          <Route path='/results' element={<Results/>} />
           <Route index element={<PipelineRun/>} />
           <Route path='/pipeline' element={<PipelineRun/>} />
         </Routes>
