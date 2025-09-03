@@ -129,7 +129,7 @@ public class InjectionService : IInjectionService
                     {
                         await MergeSchoolDataAsync(existing, school);
                         await CreateAuditEntryAsync(school.Id, "School", "Updated", 
-                            $"Merged data from batch school {school.Id}");
+                            $"Merged data from batch school {school.Id}", null, school);
                     }
                     updated++;
                 }
@@ -139,7 +139,7 @@ public class InjectionService : IInjectionService
                     {
                         school.MasterSchoolId = Guid.NewGuid().ToString();
                         await CreateAuditEntryAsync(school.Id, "School", "Created", 
-                            $"Created new school from batch");
+                            $"Created new school from batch", null, school);
                     }
                     created++;
                 }
@@ -180,7 +180,7 @@ public class InjectionService : IInjectionService
                     {
                         await MergeStudentDataAsync(existing, student);
                         await CreateAuditEntryAsync(student.Id, "Student", "Updated", 
-                            $"Merged data from batch student {student.Id}");
+                            $"Merged data from batch student {student.Id}", null, student);
                     }
                     updated++;
                 }
@@ -190,7 +190,7 @@ public class InjectionService : IInjectionService
                     {
                         student.MasterStudentId = Guid.NewGuid().ToString();
                         await CreateAuditEntryAsync(student.Id, "Student", "Created", 
-                            $"Created new student from batch");
+                            $"Created new student from batch", null, student);
                     }
                     created++;
                 }
@@ -231,7 +231,7 @@ public class InjectionService : IInjectionService
                     {
                         await MergeParentDataAsync(existing, parent);
                         await CreateAuditEntryAsync(parent.Id, "Parent", "Updated", 
-                            $"Merged data from batch parent {parent.Id}");
+                            $"Merged data from batch parent {parent.Id}", null, parent);
                     }
                     updated++;
                 }
@@ -241,7 +241,7 @@ public class InjectionService : IInjectionService
                     {
                         parent.MasterParentId = Guid.NewGuid().ToString();
                         await CreateAuditEntryAsync(parent.Id, "Parent", "Created", 
-                            $"Created new parent from batch");
+                            $"Created new parent from batch", null, parent);
                     }
                     created++;
                 }
@@ -264,6 +264,8 @@ public class InjectionService : IInjectionService
 
     private async Task MergeSchoolDataAsync(SchoolEntity existing, SchoolEntity newData)
     {
+        var beforeSnapshot = new { existing.NameAr, existing.NameEn, existing.Region, existing.City, existing.District, existing.StagesCsv, existing.Status };
+        
         if (!string.IsNullOrEmpty(newData.NameAr)) existing.NameAr = newData.NameAr;
         if (!string.IsNullOrEmpty(newData.NameEn)) existing.NameEn = newData.NameEn;
         if (!string.IsNullOrEmpty(newData.Region)) existing.Region = newData.Region;
@@ -275,10 +277,15 @@ public class InjectionService : IInjectionService
         if (newData.LicenseExpiryDate.HasValue) existing.LicenseExpiryDate = newData.LicenseExpiryDate;
         
         existing.LastUpdated = DateTime.UtcNow;
+        
+        var afterSnapshot = new { existing.NameAr, existing.NameEn, existing.Region, existing.City, existing.District, existing.StagesCsv, existing.Status };
+        await CreateAuditEntryAsync(existing.Id, "School", "DataMerge", "Merged school data from batch", beforeSnapshot, afterSnapshot);
     }
 
     private async Task MergeStudentDataAsync(StudentEntity existing, StudentEntity newData)
     {
+        var beforeSnapshot = new { existing.FullNameAr, existing.FullNameEn, existing.DOB, existing.Gender, existing.Nationality, existing.PhonesCsv, existing.EmailsCsv, existing.Address };
+        
         if (!string.IsNullOrEmpty(newData.FullNameAr)) existing.FullNameAr = newData.FullNameAr;
         if (!string.IsNullOrEmpty(newData.FullNameEn)) existing.FullNameEn = newData.FullNameEn;
         if (newData.DOB.HasValue) existing.DOB = newData.DOB;
@@ -290,10 +297,15 @@ public class InjectionService : IInjectionService
         if (newData.CurrentSchoolRefId.HasValue) existing.CurrentSchoolRefId = newData.CurrentSchoolRefId;
         
         existing.LastUpdated = DateTime.UtcNow;
+        
+        var afterSnapshot = new { existing.FullNameAr, existing.FullNameEn, existing.DOB, existing.Gender, existing.Nationality, existing.PhonesCsv, existing.EmailsCsv, existing.Address };
+        await CreateAuditEntryAsync(existing.Id, "Student", "DataMerge", "Merged student data from batch", beforeSnapshot, afterSnapshot);
     }
 
     private async Task MergeParentDataAsync(ParentEntity existing, ParentEntity newData)
     {
+        var beforeSnapshot = new { existing.FullNameAr, existing.FullNameEn, existing.PhonesCsv, existing.EmailsCsv, existing.Address };
+        
         if (!string.IsNullOrEmpty(newData.FullNameAr)) existing.FullNameAr = newData.FullNameAr;
         if (!string.IsNullOrEmpty(newData.FullNameEn)) existing.FullNameEn = newData.FullNameEn;
         if (!string.IsNullOrEmpty(newData.PhonesCsv)) existing.PhonesCsv = newData.PhonesCsv;
@@ -301,9 +313,12 @@ public class InjectionService : IInjectionService
         if (!string.IsNullOrEmpty(newData.Address)) existing.Address = newData.Address;
         
         existing.LastUpdated = DateTime.UtcNow;
+        
+        var afterSnapshot = new { existing.FullNameAr, existing.FullNameEn, existing.PhonesCsv, existing.EmailsCsv, existing.Address };
+        await CreateAuditEntryAsync(existing.Id, "Parent", "DataMerge", "Merged parent data from batch", beforeSnapshot, afterSnapshot);
     }
 
-    private async Task CreateAuditEntryAsync(Guid entityId, string entityType, string action, string details)
+    private async Task CreateAuditEntryAsync(Guid entityId, string entityType, string action, string details, object? beforeData = null, object? afterData = null)
     {
         var audit = new AuditEntryEntity
         {
@@ -312,6 +327,8 @@ public class InjectionService : IInjectionService
             EntityType = entityType,
             Action = action,
             Details = details,
+            BeforeJson = beforeData != null ? System.Text.Json.JsonSerializer.Serialize(beforeData) : null,
+            AfterJson = afterData != null ? System.Text.Json.JsonSerializer.Serialize(afterData) : null,
             UserId = "system",
             Timestamp = DateTime.UtcNow
         };

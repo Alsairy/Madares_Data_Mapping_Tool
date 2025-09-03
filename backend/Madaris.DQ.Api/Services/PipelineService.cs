@@ -230,6 +230,48 @@ public class PipelineService : IPipelineService
             $"exceptions,{exceptions}\n"
         );
 
+        var studentParentLinksWb = new XLWorkbook();
+        var linksWs = studentParentLinksWb.Worksheets.Add("student_parent_links");
+        var linkHeaders = new[]{"Ministry_Student_ID", "Ministry_Parent_ID", "Mapped_Madaris_School_ID", "Student_Name", "Parent_Name", "Match_Method", "Confidence"};
+        for (int i=0;i<linkHeaders.Length;i++) linksWs.Cell(1, i+1).Value = linkHeaders[i];
+
+        int linkRow = 2;
+        foreach (DataRow r in n.Rows)
+        {
+            var minSch = nMinSchool != null ? r[nMinSchool]?.ToString()?.Trim() : null;
+            var studId = nStudId != null ? r[nStudId]?.ToString()?.Trim() : null;
+            var studName = r[nStudName]?.ToString()?.Trim();
+            var pid = nParentId != null ? r[nParentId]?.ToString()?.Trim() : null;
+            var pname = !string.IsNullOrEmpty(nParentName) ? r[nParentName]?.ToString()?.Trim() : "";
+
+            if (!string.IsNullOrEmpty(studId) && !string.IsNullOrEmpty(pid))
+            {
+                string mappedMadarisId = "";
+                string matchMethod = "NoMatch";
+                double confidence = 0.0;
+
+                if (!string.IsNullOrEmpty(minSch) && minSchoolToCR.TryGetValue(minSch, out var cr) && crToMadaris.TryGetValue(cr, out var mm))
+                {
+                    mappedMadarisId = mm.madarisId;
+                    matchMethod = "TarkheesBridge";
+                    confidence = 0.99;
+                }
+
+                linksWs.Cell(linkRow,1).Value = studId;
+                linksWs.Cell(linkRow,2).Value = pid;
+                linksWs.Cell(linkRow,3).Value = mappedMadarisId;
+                linksWs.Cell(linkRow,4).Value = studName;
+                linksWs.Cell(linkRow,5).Value = pname;
+                linksWs.Cell(linkRow,6).Value = matchMethod;
+                linksWs.Cell(linkRow,7).Value = confidence;
+                linkRow++;
+            }
+        }
+
+        linksWs.Columns().AdjustToContents();
+        var studentParentLinksPath = Path.Combine(exportDir, "student_parent_links.xlsx");
+        studentParentLinksWb.SaveAs(studentParentLinksPath);
+
         // Register batch for audit
         var batch = new BatchLoadEntity {
             Id = jobId,
