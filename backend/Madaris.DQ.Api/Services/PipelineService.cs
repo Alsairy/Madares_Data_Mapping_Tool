@@ -232,7 +232,7 @@ public class PipelineService : IPipelineService
 
         using var studentParentLinksWb = new XLWorkbook();
         var linksWs = studentParentLinksWb.Worksheets.Add("student_parent_links");
-        var linkHeaders = new[]{"Ministry_Student_ID", "Ministry_Parent_ID", "Mapped_Madaris_School_ID", "Student_Name", "Parent_Name", "Match_Method", "Confidence"};
+        var linkHeaders = new[]{"Ministry_Student_ID", "Ministry_Parent_ID", "Mapped_CR", "Mapped_Madaris_School_ID", "Student_Name", "Parent_Name", "Match_Method", "Confidence"};
         for (int i=0;i<linkHeaders.Length;i++) linksWs.Cell(1, i+1).Value = linkHeaders[i];
 
         int linkRow = 2;
@@ -246,24 +246,30 @@ public class PipelineService : IPipelineService
 
             if (!string.IsNullOrEmpty(studId) && !string.IsNullOrEmpty(pid))
             {
+                string mappedCR = "";
                 string mappedMadarisId = "";
                 string matchMethod = "NoMatch";
                 double confidence = 0.0;
 
-                if (!string.IsNullOrEmpty(minSch) && minSchoolToCR.TryGetValue(minSch, out var cr) && crToMadaris.TryGetValue(cr, out var mm))
+                if (!string.IsNullOrEmpty(minSch) && minSchoolToCR.TryGetValue(minSch, out var cr))
                 {
-                    mappedMadarisId = mm.madarisId;
-                    matchMethod = "TarkheesBridge";
-                    confidence = 0.99;
+                    mappedCR = cr;
+                    if (crToMadaris.TryGetValue(cr, out var mm))
+                    {
+                        mappedMadarisId = mm.madarisId;
+                        matchMethod = "TarkheesBridge";
+                        confidence = 0.99;
+                    }
                 }
 
                 linksWs.Cell(linkRow,1).Value = studId;
                 linksWs.Cell(linkRow,2).Value = pid;
-                linksWs.Cell(linkRow,3).Value = mappedMadarisId;
-                linksWs.Cell(linkRow,4).Value = studName;
-                linksWs.Cell(linkRow,5).Value = pname;
-                linksWs.Cell(linkRow,6).Value = matchMethod;
-                linksWs.Cell(linkRow,7).Value = confidence;
+                linksWs.Cell(linkRow,3).Value = mappedCR;
+                linksWs.Cell(linkRow,4).Value = mappedMadarisId;
+                linksWs.Cell(linkRow,5).Value = studName;
+                linksWs.Cell(linkRow,6).Value = pname;
+                linksWs.Cell(linkRow,7).Value = matchMethod;
+                linksWs.Cell(linkRow,8).Value = confidence;
                 linkRow++;
             }
         }

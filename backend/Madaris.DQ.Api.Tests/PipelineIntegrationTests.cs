@@ -101,4 +101,51 @@ public class PipelineIntegrationTests : IClassFixture<WebApplicationFactory<Prog
             ContentType = "text/csv"
         };
     }
+
+    [Fact]
+    public async Task Pipeline_Run_Twice_Produces_Exports_Without_Leaks()
+    {
+        using var scope1 = _factory.Services.CreateScope();
+        var pipelineService1 = scope1.ServiceProvider.GetRequiredService<IPipelineService>();
+        
+        var tarkheesData1 = CreateSampleTarkheesFile();
+        var noorData1 = CreateSampleNoorFile();
+        var madarisData1 = CreateSampleMadarisFile();
+        var result1 = await pipelineService1.RunAsync(tarkheesData1, noorData1, madarisData1, "test-user-1");
+
+        var studentsPath1 = await pipelineService1.GetExportPathAsync(result1.JobId, "students_master.xlsx");
+        var parentsPath1 = await pipelineService1.GetExportPathAsync(result1.JobId, "parents_master.xlsx");
+        var mappingPath1 = await pipelineService1.GetExportPathAsync(result1.JobId, "mapping_report.csv");
+        var linksPath1 = await pipelineService1.GetExportPathAsync(result1.JobId, "student_parent_links.xlsx");
+        
+        Assert.True(File.Exists(studentsPath1));
+        Assert.True(File.Exists(parentsPath1));
+        Assert.True(File.Exists(mappingPath1));
+        Assert.True(File.Exists(linksPath1));
+
+        using var scope2 = _factory.Services.CreateScope();
+        var pipelineService2 = scope2.ServiceProvider.GetRequiredService<IPipelineService>();
+        
+        var tarkheesData2 = CreateSampleTarkheesFile();
+        var noorData2 = CreateSampleNoorFile();
+        var madarisData2 = CreateSampleMadarisFile();
+        var result2 = await pipelineService2.RunAsync(tarkheesData2, noorData2, madarisData2, "test-user-2");
+
+        var studentsPath2 = await pipelineService2.GetExportPathAsync(result2.JobId, "students_master.xlsx");
+        var parentsPath2 = await pipelineService2.GetExportPathAsync(result2.JobId, "parents_master.xlsx");
+        var mappingPath2 = await pipelineService2.GetExportPathAsync(result2.JobId, "mapping_report.csv");
+        var linksPath2 = await pipelineService2.GetExportPathAsync(result2.JobId, "student_parent_links.xlsx");
+        
+        Assert.True(File.Exists(studentsPath2));
+        Assert.True(File.Exists(parentsPath2));
+        Assert.True(File.Exists(mappingPath2));
+        Assert.True(File.Exists(linksPath2));
+
+        Assert.NotEqual(result1.JobId, result2.JobId);
+        
+        Assert.True(result1.SchoolsMatched > 0);
+        Assert.True(result2.SchoolsMatched > 0);
+        Assert.True(result1.StudentsPrepared > 0);
+        Assert.True(result2.StudentsPrepared > 0);
+    }
 }
