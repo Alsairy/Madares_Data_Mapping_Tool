@@ -44,7 +44,10 @@ export default function PipelineRun() {
 
   const downloadFile = async (filename: string) => {
     if (!result?.jobId) return
-    
+    const allowed = ['students_master.xlsx', 'parents_master.xlsx', 'mapping_report.csv', 'student_parent_links.xlsx']
+    if (!allowed.includes(filename)) {
+      console.error('Invalid filename requested'); return
+    }
     try {
       window.location.href = `${api.defaults.baseURL}/api/pipeline/${result.jobId}/download/${filename}`
     } catch (error) {

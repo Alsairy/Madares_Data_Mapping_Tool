@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModalProps {
   isOpen: boolean;
@@ -16,24 +17,25 @@ export const Modal: React.FC<ModalProps> = ({
   size = 'md'
 }) => {
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
+    const handleEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
+      const prevOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.body.style.overflow = prevOverflow;
+      };
     }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
+    return;
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (isOpen && dialogRef.current) dialogRef.current.focus();
+  }, [isOpen]);
+
   if (!isOpen) return null;
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const sizes = {
     sm: 'max-w-md',
@@ -42,21 +44,28 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'max-w-4xl'
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-50 overflow-y-auto" aria-hidden={false}>
       <div className="flex min-h-screen items-center justify-center p-4">
         <div
           className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
           onClick={onClose}
         />
         
-        <div className={`
+        <div
+          ref={dialogRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={title ? 'modal-title' : undefined}
+          aria-label={title ? undefined : 'Modal dialog'}
+          className={`
           relative bg-white rounded-lg shadow-xl w-full ${sizes[size]}
           transform transition-all animate-fade-in
         `}>
           {title && (
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 id="modal-title" className="text-lg font-semibold text-gray-900">
                 {title}
               </h3>
               <button
@@ -75,6 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

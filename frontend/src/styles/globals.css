@@ -166,9 +166,10 @@ button:disabled {
 
 /* Motion reduction */
 @media (prefers-reduced-motion: reduce) {
-  .animate-spin,
-  .animate-fade-in {
+  * {
     animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
 

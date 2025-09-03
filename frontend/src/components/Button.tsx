@@ -5,6 +5,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   children: React.ReactNode;
+  type?: 'button' | 'submit' | 'reset';
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -14,6 +15,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   children,
   className = '',
+  type = 'button',
   ...props
 }) => {
   const baseStyles = `
@@ -65,6 +67,7 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      type={type}
       className={combinedClassName}
       disabled={disabled || loading}
       {...props}

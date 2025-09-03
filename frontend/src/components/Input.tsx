@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -18,7 +18,10 @@ export const Input: React.FC<InputProps> = ({
   id,
   ...props
 }) => {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  const uid = useId();
+  const inputId = id ?? uid;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const helperId = !error && helperText ? `${inputId}-helper` : undefined;
 
   const baseInputStyles = `
     block w-full rounded-lg border transition-colors duration-200
@@ -51,7 +54,7 @@ export const Input: React.FC<InputProps> = ({
       
       <div className="relative">
         {leftIcon && (
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
             <div className="h-5 w-5 text-gray-400">
               {leftIcon}
             </div>
@@ -61,11 +64,13 @@ export const Input: React.FC<InputProps> = ({
         <input
           id={inputId}
           className={`${inputStyles} ${paddingStyles}`}
+          aria-invalid={Boolean(error) || undefined}
+          aria-describedby={errorId ?? helperId}
           {...props}
         />
         
         {rightIcon && (
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none" aria-hidden="true">
             <div className="h-5 w-5 text-gray-400">
               {rightIcon}
             </div>
@@ -74,13 +79,13 @@ export const Input: React.FC<InputProps> = ({
       </div>
       
       {error && (
-        <p className="mt-1 text-sm text-red-600">
+        <p id={errorId} className="mt-1 text-sm text-red-600" role="alert">
           {error}
         </p>
       )}
       
       {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-500">
+        <p id={helperId} className="mt-1 text-sm text-gray-500">
           {helperText}
         </p>
       )}
@@ -102,7 +107,10 @@ export const Textarea: React.FC<TextareaProps> = ({
   id,
   ...props
 }) => {
-  const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+  const uid = useId();
+  const textareaId = id ?? uid;
+  const errorId = error ? `${textareaId}-error` : undefined;
+  const helperId = !error && helperText ? `${textareaId}-helper` : undefined;
 
   const baseStyles = `
     block w-full rounded-lg border transition-colors duration-200
@@ -129,17 +137,19 @@ export const Textarea: React.FC<TextareaProps> = ({
       <textarea
         id={textareaId}
         className={styles}
+        aria-invalid={Boolean(error) || undefined}
+        aria-describedby={errorId ?? helperId}
         {...props}
       />
       
       {error && (
-        <p className="mt-1 text-sm text-red-600">
+        <p id={errorId} className="mt-1 text-sm text-red-600" role="alert">
           {error}
         </p>
       )}
       
       {helperText && !error && (
-        <p className="mt-1 text-sm text-gray-500">
+        <p id={helperId} className="mt-1 text-sm text-gray-500">
           {helperText}
         </p>
       )}

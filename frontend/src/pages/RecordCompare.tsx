@@ -21,9 +21,11 @@ export default function RecordCompare() {
   const [sourceRecordId, setSourceRecordId] = useState('')
   const [targetRecordId, setTargetRecordId] = useState('')
   const [comparison, setComparison] = useState<ComparisonResult | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [compareLoading, setCompareLoading] = useState(false)
+  const [mergeLoading, setMergeLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mergeDecisions, setMergeDecisions] = useState<Record<string, any>>({})
+  const isEqual = (a: any, b: any) => { try { return JSON.stringify(a) === JSON.stringify(b) } catch { return a === b } }
 
   const handleCompare = async () => {
     if (!sourceRecordId || !targetRecordId) {
@@ -31,7 +33,7 @@ export default function RecordCompare() {
       return
     }
 
-    setLoading(true)
+    setCompareLoading(true)
     setError(null)
     try {
       const response = await api.get('/api/matching/compare', { 
@@ -43,7 +45,7 @@ export default function RecordCompare() {
       setError('Failed to compare records')
       console.error('Comparison error:', err)
     } finally {
-      setLoading(false)
+      setCompareLoading(false)
     }
   }
 
@@ -54,7 +56,7 @@ export default function RecordCompare() {
   const handleMerge = async () => {
     if (!comparison) return
 
-    setLoading(true)
+    setMergeLoading(true)
     try {
       await api.post('/api/matching/merge', {
         sourceId: sourceRecordId,
@@ -70,7 +72,7 @@ export default function RecordCompare() {
       setError('Failed to merge records')
       console.error('Merge error:', err)
     } finally {
-      setLoading(false)
+      setMergeLoading(false)
     }
   }
 
@@ -110,7 +112,7 @@ export default function RecordCompare() {
           <div className="mt-6 text-center">
             <Button
               onClick={handleCompare}
-              loading={loading}
+              loading={compareLoading}
               disabled={!sourceRecordId || !targetRecordId}
               variant="primary"
               size="lg"
@@ -118,7 +120,7 @@ export default function RecordCompare() {
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
-              {loading ? 'Comparing...' : 'Compare Records'}
+              {compareLoading ? 'Comparing...' : 'Compare Records'}
             </Button>
           </div>
         </CardContent>
@@ -231,7 +233,7 @@ export default function RecordCompare() {
                                 <input
                                   type="radio"
                                   name={`conflict-${index}`}
-                                  checked={mergeDecisions[conflict.field] === conflict.sourceValue}
+                                  checked={isEqual(mergeDecisions[conflict.field], conflict.sourceValue)}
                                   onChange={() => handleMergeDecisionChange(conflict.field, conflict.sourceValue)}
                                   className="text-blue-600 focus:ring-blue-500"
                                 />
@@ -241,7 +243,7 @@ export default function RecordCompare() {
                                 <input
                                   type="radio"
                                   name={`conflict-${index}`}
-                                  checked={mergeDecisions[conflict.field] === conflict.targetValue}
+                                  checked={isEqual(mergeDecisions[conflict.field], conflict.targetValue)}
                                   onChange={() => handleMergeDecisionChange(conflict.field, conflict.targetValue)}
                                   className="text-cyan-600 focus:ring-cyan-500"
                                 />
@@ -281,14 +283,14 @@ export default function RecordCompare() {
           <div className="flex justify-center space-x-4">
             <Button
               onClick={handleMerge}
-              loading={loading}
+              loading={mergeLoading}
               variant="success"
               size="lg"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              {loading ? 'Merging...' : 'Execute Merge'}
+              {mergeLoading ? 'Merging...' : 'Execute Merge'}
             </Button>
             
             <Button

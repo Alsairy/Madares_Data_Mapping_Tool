@@ -62,13 +62,17 @@ interface TableHeadProps {
   className?: string;
   sortable?: boolean;
   onSort?: () => void;
+  sortDirection?: 'asc' | 'desc' | 'none';
+  scope?: 'col' | 'row';
 }
 
-export const TableHead: React.FC<TableHeadProps> = ({ 
+export const TableHead: React.FC<TableHeadProps> = ({
   children, 
   className = '', 
   sortable = false,
-  onSort 
+  onSort,
+  sortDirection = 'none',
+  scope = 'col'
 }) => {
   const baseStyles = `
     px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider
@@ -77,15 +81,23 @@ export const TableHead: React.FC<TableHeadProps> = ({
   const sortableStyles = sortable ? 'cursor-pointer hover:text-gray-700' : '';
 
   return (
-    <th 
+    <th
+      scope={scope}
+      aria-sort={sortable ? (sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : 'none') : undefined}
       className={`${baseStyles} ${sortableStyles} ${className}`}
       onClick={sortable ? onSort : undefined}
     >
       <div className="flex items-center space-x-1">
         <span>{children}</span>
         {sortable && (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          <svg className="w-4 h-4" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d={sortDirection === 'asc'
+                ? 'M7 11l5-5 5 5'
+                : sortDirection === 'desc'
+                ? 'M7 13l5 5 5-5'
+                : 'M7 11l5-5 5 5 M7 13l5 5 5-5'}
+            />
           </svg>
         )}
       </div>
