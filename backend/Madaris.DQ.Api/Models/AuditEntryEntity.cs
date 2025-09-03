@@ -7,6 +7,9 @@ public class AuditEntryEntity
     public Guid EntityId { get; set; }
     public string? BeforeJson { get; set; }
     public string? AfterJson { get; set; }
+    public string? Details { get; set; }
     public string? User { get; set; }
+    public string? UserId { get; set; }
     public DateTime TimestampUtc { get; set; } = DateTime.UtcNow;
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
