@@ -1,0 +1,107 @@
+import React from 'react';
+
+interface TableProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const Table: React.FC<TableProps> = ({ children, className = '' }) => {
+  return (
+    <div className="overflow-x-auto">
+      <table className={`min-w-full divide-y divide-gray-200 ${className}`}>
+        {children}
+      </table>
+    </div>
+  );
+};
+
+interface TableHeaderProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const TableHeader: React.FC<TableHeaderProps> = ({ children, className = '' }) => {
+  return (
+    <thead className={`bg-gray-50 ${className}`}>
+      {children}
+    </thead>
+  );
+};
+
+interface TableBodyProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const TableBody: React.FC<TableBodyProps> = ({ children, className = '' }) => {
+  return (
+    <tbody className={`bg-white divide-y divide-gray-200 ${className}`}>
+      {children}
+    </tbody>
+  );
+};
+
+interface TableRowProps {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+}
+
+export const TableRow: React.FC<TableRowProps> = ({ children, className = '', onClick }) => {
+  const baseStyles = onClick ? 'hover:bg-gray-50 cursor-pointer' : '';
+  
+  return (
+    <tr className={`${baseStyles} ${className}`} onClick={onClick}>
+      {children}
+    </tr>
+  );
+};
+
+interface TableHeadProps {
+  children: React.ReactNode;
+  className?: string;
+  sortable?: boolean;
+  onSort?: () => void;
+}
+
+export const TableHead: React.FC<TableHeadProps> = ({ 
+  children, 
+  className = '', 
+  sortable = false,
+  onSort 
+}) => {
+  const baseStyles = `
+    px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider
+  `;
+  
+  const sortableStyles = sortable ? 'cursor-pointer hover:text-gray-700' : '';
+
+  return (
+    <th 
+      className={`${baseStyles} ${sortableStyles} ${className}`}
+      onClick={sortable ? onSort : undefined}
+    >
+      <div className="flex items-center space-x-1">
+        <span>{children}</span>
+        {sortable && (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+          </svg>
+        )}
+      </div>
+    </th>
+  );
+};
+
+interface TableCellProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const TableCell: React.FC<TableCellProps> = ({ children, className = '' }) => {
+  return (
+    <td className={`px-6 py-4 whitespace-nowrap text-sm text-gray-900 ${className}`}>
+      {children}
+    </td>
+  );
+};
