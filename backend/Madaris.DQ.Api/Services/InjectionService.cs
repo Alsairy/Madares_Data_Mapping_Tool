@@ -130,7 +130,7 @@ public class InjectionService : IInjectionService
                         await MergeSchoolDataAsync(existing, school);
                         await CreateAuditEntryAsync(existing.Id, "School", "Updated",
                             $"Merged data from batch school {school.Id}",
-                            null,
+                            new { existing.NameAr, existing.NameEn, existing.Region, existing.City, existing.District, existing.StagesCsv, existing.Status },
                             new { school.NameAr, school.NameEn, school.Region, school.City, school.District, school.StagesCsv, school.Status });
                     }
                     updated++;
@@ -185,7 +185,7 @@ public class InjectionService : IInjectionService
                         await MergeStudentDataAsync(existing, student);
                         await CreateAuditEntryAsync(existing.Id, "Student", "Updated",
                             $"Merged data from batch student {student.Id}",
-                            null,
+                            new { existing.FullNameAr, existing.FullNameEn, existing.DOB, existing.Gender, existing.Nationality, existing.PhonesCsv, existing.EmailsCsv, existing.Address },
                             new { student.FullNameAr, student.FullNameEn, student.DOB, student.Gender, student.Nationality, student.PhonesCsv, student.EmailsCsv, student.Address });
                     }
                     updated++;
@@ -240,7 +240,7 @@ public class InjectionService : IInjectionService
                         await MergeParentDataAsync(existing, parent);
                         await CreateAuditEntryAsync(existing.Id, "Parent", "Updated",
                             $"Merged data from batch parent {parent.Id}",
-                            null,
+                            new { existing.FullNameAr, existing.FullNameEn, existing.PhonesCsv, existing.EmailsCsv, existing.Address },
                             new { parent.FullNameAr, parent.FullNameEn, parent.PhonesCsv, parent.EmailsCsv, parent.Address });
                     }
                     updated++;

@@ -18,10 +18,7 @@ else
             builder.Configuration.GetConnectionString("DefaultConnection"),
             sql =>
             {
-                sql.EnableRetryOnFailure(
-                    maxRetryCount: 5,
-                    maxRetryDelay: TimeSpan.FromSeconds(30),
-                    errorNumbersToAdd: null);
+                sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
                 sql.CommandTimeout(60);
             }));
 }
