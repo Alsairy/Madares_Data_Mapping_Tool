@@ -6,6 +6,8 @@ using Madaris.DQ.Api.Services;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Xunit;
+using ClosedXML.Excel;
+using System.Linq;
 
 namespace Madaris.DQ.Api.Tests;
 
@@ -122,6 +124,16 @@ public class PipelineIntegrationTests : IClassFixture<WebApplicationFactory<Prog
         Assert.True(File.Exists(parentsPath1));
         Assert.True(File.Exists(mappingPath1));
         Assert.True(File.Exists(linksPath1));
+
+        using (var wb = new XLWorkbook(linksPath1))
+        {
+            var ws = wb.Worksheet("student_parent_links");
+            var headers = ws.Row(1).Cells(1, 8).Select(c => c.GetString()).ToArray();
+            Assert.Equal(new[]{
+                "Ministry_Student_ID","Ministry_Parent_ID","Mapped_CR","Mapped_Madaris_School_ID",
+                "Student_Name","Parent_Name","Match_Method","Confidence"
+            }, headers);
+        }
 
         using var scope2 = _factory.Services.CreateScope();
         var pipelineService2 = scope2.ServiceProvider.GetRequiredService<IPipelineService>();
