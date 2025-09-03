@@ -40,18 +40,17 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddCors(options => {
     options.AddPolicy("all", p => p
-        .WithOrigins("https://data-mapping-assessment-app-x5jb4izt.devinapps.com")
+        .AllowAnyOrigin()
         .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials());
+        .AllowAnyMethod());
 });
 
 var app = builder.Build();
 
+app.UseCors("all");
+
 app.UseSwagger();
 app.UseSwaggerUI();
-
-app.UseCors("all");
 
 app.MapControllers();
 app.Run();
