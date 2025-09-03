@@ -26,7 +26,7 @@ export default function RecordCompare() {
 
     setLoading(true)
     try {
-      const response = await api.get(`/api/matching/compare?sourceId=${sourceId}&targetId=${targetId}`)
+      const response = await api.get('/api/matching/compare', { params: { sourceId, targetId } })
       setComparison(response.data)
       setMergeDecisions({})
     } catch (error) {
@@ -65,7 +65,7 @@ export default function RecordCompare() {
   }
 
   const getFieldValue = (record: EntityRecord, fieldName: string) => {
-    return record.fields[fieldName] || 'N/A'
+    return record.fields[fieldName] ?? 'N/A'
   }
 
   const isConflictField = (fieldName: string) => {

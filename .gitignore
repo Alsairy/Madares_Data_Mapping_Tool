@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
-package-lock.json
+# Keep lockfiles committed for deterministic installs
+# If using npm: commit package-lock.json
+# If using Yarn/pnpm: commit yarn.lock / pnpm-lock.yaml
 
 # Environment files
 .env

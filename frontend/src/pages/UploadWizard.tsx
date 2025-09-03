@@ -36,9 +36,7 @@ export default function UploadWizard() {
       const formData = new FormData()
       formData.append('file', fileData.file)
       
-      const response = await api.post(`/api/pipeline/ingest/${type}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const response = await api.post(`/api/pipeline/ingest/${type}`, formData)
       
       setFiles(prev => ({
         ...prev,

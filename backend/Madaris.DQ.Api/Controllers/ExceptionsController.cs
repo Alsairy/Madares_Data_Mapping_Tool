@@ -18,9 +18,20 @@ public class ExceptionsController : ControllerBase
     public async Task<IActionResult> GetStatistics()
         => Ok(await _svc.GetStatisticsAsync());
 
-    [HttpGet("{issueId}")]
-    public async Task<IActionResult> GetDetails([FromRoute]Guid issueId)
-        => Ok(await _svc.GetIssueDetailsAsync(issueId));
+    [HttpGet("{issueId:guid}")]
+    public async Task<IActionResult> GetDetails([FromRoute] Guid issueId)
+    {
+        try
+        {
+            var result = await _svc.GetIssueDetailsAsync(issueId);
+            if (result == null) return NotFound(new { message = "Issue not found" });
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+    }
 
     [HttpPost("{issueId}/resolve")]
     public async Task<IActionResult> Resolve([FromRoute]Guid issueId, [FromQuery]bool resolved = true)

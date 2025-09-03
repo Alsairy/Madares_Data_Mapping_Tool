@@ -27,7 +27,7 @@ export default function ImpactPreview() {
 
     setLoading(true)
     try {
-      const response = await api.get(`/api/batch/${batchId}/impact`)
+      const response = await api.get<ImpactData>(`/api/batch/${encodeURIComponent(batchId)}/impact`)
       setImpact(response.data)
     } catch (error) {
       console.error('Error loading impact data:', error)
@@ -41,7 +41,11 @@ export default function ImpactPreview() {
 
     setInjecting(true)
     try {
-      const response = await api.post(`/api/batch/${batchId}/inject?simulate=${simulate}`)
+      const response = await api.post(
+        `/api/batch/${encodeURIComponent(batchId)}/inject`,
+        null,
+        { params: { simulate } }
+      )
       
       if (simulate) {
         alert('Simulation completed successfully! Check the results.')

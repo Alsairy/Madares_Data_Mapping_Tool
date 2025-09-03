@@ -38,8 +38,9 @@ public class DashboardController : ControllerBase
             schoolMatchRate = totalSchools > 0 ? (double)schoolsWithLicense / totalSchools : 0.0,
             studentMatchRate = totalStudents > 0 ? (double)studentsWithValidNationalId / totalStudents : 0.0,
             parentMatchRate = totalParents > 0 ? (double)parentsWithValidNationalId / totalParents : 0.0,
-            dqRulePassRate = (totalSchools + totalStudents + totalParents) > 0 ? 
-                (double)(resolvedIssues) / (resolvedIssues + openIssues) : 0.0,
+            dqRulePassRate = (resolvedIssues + openIssues) > 0
+                ? (double)resolvedIssues / (resolvedIssues + openIssues)
+                : 1.0,
             totalRecords = totalSchools + totalStudents + totalParents,
             openIssues,
             resolvedIssues
@@ -58,7 +59,7 @@ public class DashboardController : ControllerBase
             {
                 date = g.Key,
                 batchCount = g.Count(),
-                recordsProcessed = g.Sum(b => 1)
+                recordsProcessed = g.Count()
             })
             .OrderBy(x => x.date)
             .ToListAsync();
@@ -70,12 +71,18 @@ public class DashboardController : ControllerBase
     public async Task<IActionResult> GetRegionalCoverage()
     {
         var regionalStats = await _db.Schools
-            .GroupBy(s => s.Region ?? "Unknown")
+            .GroupJoin(_db.Students, s => s.Id, st => st.SchoolId, (s, studs) => new
+            {
+                Region = s.Region ?? "Unknown",
+                SchoolId = s.Id,
+                StudCount = studs.Count()
+            })
+            .GroupBy(x => x.Region)
             .Select(g => new
             {
                 region = g.Key,
-                schoolCount = g.Count(),
-                studentCount = g.SelectMany(s => _db.Students.Where(st => st.SchoolId == s.Id)).Count()
+                schoolCount = g.Select(x => x.SchoolId).Distinct().Count(),
+                studentCount = g.Sum(x => x.StudCount)
             })
             .OrderByDescending(x => x.schoolCount)
             .ToListAsync();
