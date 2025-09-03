@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Madaris.DQ.Api.Data;
 using Madaris.DQ.Api.Services;
+using Madaris.DQ.Api.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Config
-var useInMemory = builder.Configuration.GetValue<bool>("UseInMemory", false);
+var useInMemory = builder.Configuration.GetValue<bool>("UseInMemory", true) || 
+                  string.IsNullOrEmpty(builder.Configuration.GetConnectionString("DefaultConnection"));
 if (useInMemory)
 {
     builder.Services.AddDbContext<AppDbContext>(opts =>
@@ -32,7 +33,11 @@ builder.Services.AddScoped<IPipelineService, PipelineService>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Madaris DQ API", Version = "v1" });
+    c.OperationFilter<FileUploadOperationFilter>();
+});
 builder.Services.AddCors(options => {
     options.AddPolicy("all", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
@@ -41,11 +46,8 @@ var app = builder.Build();
 
 app.UseCors("all");
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapControllers();
 app.Run();
