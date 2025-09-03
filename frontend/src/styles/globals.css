@@ -164,6 +164,14 @@ button:disabled {
   animation: fadeIn 0.3s ease-out;
 }
 
+/* Motion reduction */
+@media (prefers-reduced-motion: reduce) {
+  .animate-spin,
+  .animate-fade-in {
+    animation: none !important;
+  }
+}
+
 /* Grid Utilities */
 .grid {
   display: grid;
