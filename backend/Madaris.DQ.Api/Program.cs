@@ -48,10 +48,10 @@ builder.Services.AddCors(options => {
 
 var app = builder.Build();
 
-app.UseCors("all");
-
 app.UseSwagger();
 app.UseSwaggerUI();
+
+app.UseCors("all");
 
 app.MapControllers();
 app.Run();

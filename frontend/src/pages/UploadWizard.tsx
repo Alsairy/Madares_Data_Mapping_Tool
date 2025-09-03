@@ -4,6 +4,8 @@ import api from '../services/api'
 interface FileUpload {
   file: File | null
   uploaded: boolean
+  uploading: boolean
+  error?: string
   batchId?: string
 }
 
@@ -14,16 +16,16 @@ export default function UploadWizard() {
     noor: FileUpload
     madaris: FileUpload
   }>({
-    tarkhees: { file: null, uploaded: false },
-    noor: { file: null, uploaded: false },
-    madaris: { file: null, uploaded: false }
+    tarkhees: { file: null, uploaded: false, uploading: false },
+    noor: { file: null, uploaded: false, uploading: false },
+    madaris: { file: null, uploaded: false, uploading: false }
   })
-  const [uploading, setUploading] = useState(false)
+  const [globalUploading, setGlobalUploading] = useState(false)
 
   const handleFileSelect = (type: keyof typeof files, file: File) => {
     setFiles(prev => ({
       ...prev,
-      [type]: { file, uploaded: false }
+      [type]: { file, uploaded: false, uploading: false, error: undefined }
     }))
   }
 
@@ -31,7 +33,11 @@ export default function UploadWizard() {
     const fileData = files[type]
     if (!fileData.file) return
 
-    setUploading(true)
+    setFiles(prev => ({
+      ...prev,
+      [type]: { ...prev[type], uploading: true, error: undefined }
+    }))
+    
     try {
       const formData = new FormData()
       formData.append('file', fileData.file)
@@ -40,12 +46,14 @@ export default function UploadWizard() {
       
       setFiles(prev => ({
         ...prev,
-        [type]: { ...prev[type], uploaded: true, batchId: response.data.uploadId }
+        [type]: { ...prev[type], uploaded: true, uploading: false, batchId: response.data.uploadId }
       }))
     } catch (error) {
       console.error(`Error uploading ${type} file:`, error)
-    } finally {
-      setUploading(false)
+      setFiles(prev => ({
+        ...prev,
+        [type]: { ...prev[type], uploading: false, error: 'Upload failed. Please try again.' }
+      }))
     }
   }
 
@@ -54,7 +62,7 @@ export default function UploadWizard() {
   const startProcessing = async () => {
     if (!allFilesUploaded) return
     
-    setUploading(true)
+    setGlobalUploading(true)
     try {
       const response = await api.post('/api/pipeline/process', {
         tarkheesUploadId: files.tarkhees.batchId,
@@ -68,24 +76,92 @@ export default function UploadWizard() {
       console.error('Error processing files:', error)
       alert('Error processing files. Please try again.')
     } finally {
-      setUploading(false)
+      setGlobalUploading(false)
     }
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Data Upload Wizard</h1>
+    <div style={{ 
+      padding: '40px 20px', 
+      maxWidth: '900px', 
+      margin: '0 auto',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h1 style={{ 
+          fontSize: '2.5rem', 
+          fontWeight: '700', 
+          color: '#1a365d',
+          marginBottom: '10px'
+        }}>
+          Madaris Data Upload Wizard
+        </h1>
+        <p style={{ 
+          fontSize: '1.1rem', 
+          color: '#4a5568',
+          marginBottom: '0'
+        }}>
+          Upload your data files to begin the mapping process
+        </p>
+      </div>
       
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+      <div style={{ marginBottom: '40px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          marginBottom: '30px',
+          position: 'relative'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '10%',
+            right: '10%',
+            height: '2px',
+            backgroundColor: '#e2e8f0',
+            zIndex: 1
+          }}>
+            <div style={{
+              height: '100%',
+              backgroundColor: '#3182ce',
+              width: `${((step - 1) / 2) * 100}%`,
+              transition: 'width 0.3s ease'
+            }}></div>
+          </div>
           {[1, 2, 3].map(s => (
             <div key={s} style={{
-              padding: '10px 20px',
-              backgroundColor: step >= s ? '#007bff' : '#e9ecef',
-              color: step >= s ? 'white' : '#6c757d',
-              borderRadius: '5px'
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              zIndex: 2,
+              position: 'relative'
             }}>
-              Step {s}
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: step >= s ? '#3182ce' : '#e2e8f0',
+                color: step >= s ? 'white' : '#a0aec0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '600',
+                fontSize: '1.1rem',
+                marginBottom: '8px',
+                transition: 'all 0.3s ease',
+                border: '3px solid white',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }}>
+                {step > s ? '✓' : s}
+              </div>
+              <span style={{
+                fontSize: '0.9rem',
+                fontWeight: '500',
+                color: step >= s ? '#3182ce' : '#718096',
+                textAlign: 'center'
+              }}>
+                {s === 1 ? 'Tarkhees License' : s === 2 ? 'Noor Roster' : 'Madaris Schools'}
+              </span>
             </div>
           ))}
         </div>
@@ -108,17 +184,17 @@ export default function UploadWizard() {
                 <p>Selected: {files.tarkhees.file.name}</p>
                 <button 
                   onClick={() => uploadFile('tarkhees')}
-                  disabled={uploading || files.tarkhees.uploaded}
+                  disabled={files.tarkhees.uploading || files.tarkhees.uploaded}
                   style={{
                     padding: '10px 20px',
                     backgroundColor: files.tarkhees.uploaded ? '#28a745' : '#007bff',
                     color: 'white',
                     border: 'none',
                     borderRadius: '5px',
-                    cursor: uploading ? 'not-allowed' : 'pointer'
+                    cursor: files.tarkhees.uploading ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {files.tarkhees.uploaded ? 'Uploaded ✓' : uploading ? 'Uploading...' : 'Upload File'}
+                  {files.tarkhees.uploaded ? 'Uploaded ✓' : files.tarkhees.uploading ? 'Uploading...' : 'Upload File'}
                 </button>
               </div>
             )}
@@ -159,17 +235,17 @@ export default function UploadWizard() {
                 <p>Selected: {files.noor.file.name}</p>
                 <button 
                   onClick={() => uploadFile('noor')}
-                  disabled={uploading || files.noor.uploaded}
+                  disabled={files.noor.uploading || files.noor.uploaded}
                   style={{
                     padding: '10px 20px',
                     backgroundColor: files.noor.uploaded ? '#28a745' : '#007bff',
                     color: 'white',
                     border: 'none',
                     borderRadius: '5px',
-                    cursor: uploading ? 'not-allowed' : 'pointer'
+                    cursor: files.noor.uploading ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {files.noor.uploaded ? 'Uploaded ✓' : uploading ? 'Uploading...' : 'Upload File'}
+                  {files.noor.uploaded ? 'Uploaded ✓' : files.noor.uploading ? 'Uploading...' : 'Upload File'}
                 </button>
               </div>
             )}
@@ -225,17 +301,17 @@ export default function UploadWizard() {
                 <p>Selected: {files.madaris.file.name}</p>
                 <button 
                   onClick={() => uploadFile('madaris')}
-                  disabled={uploading || files.madaris.uploaded}
+                  disabled={files.madaris.uploading || files.madaris.uploaded}
                   style={{
                     padding: '10px 20px',
                     backgroundColor: files.madaris.uploaded ? '#28a745' : '#007bff',
                     color: 'white',
                     border: 'none',
                     borderRadius: '5px',
-                    cursor: uploading ? 'not-allowed' : 'pointer'
+                    cursor: files.madaris.uploading ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  {files.madaris.uploaded ? 'Uploaded ✓' : uploading ? 'Uploading...' : 'Upload File'}
+                  {files.madaris.uploaded ? 'Uploaded ✓' : files.madaris.uploading ? 'Uploading...' : 'Upload File'}
                 </button>
               </div>
             )}
@@ -258,17 +334,17 @@ export default function UploadWizard() {
             {allFilesUploaded && (
               <button 
                 onClick={startProcessing}
-                disabled={uploading}
+                disabled={globalUploading}
                 style={{
                   padding: '10px 20px',
                   backgroundColor: '#28a745',
                   color: 'white',
                   border: 'none',
                   borderRadius: '5px',
-                  cursor: uploading ? 'not-allowed' : 'pointer'
+                  cursor: globalUploading ? 'not-allowed' : 'pointer'
                 }}
               >
-                {uploading ? 'Processing...' : 'Start Processing →'}
+                {globalUploading ? 'Processing...' : 'Start Processing →'}
               </button>
             )}
           </div>
