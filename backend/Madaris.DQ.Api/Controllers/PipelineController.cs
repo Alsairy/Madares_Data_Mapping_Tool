@@ -12,7 +12,9 @@ public class PipelineController : ControllerBase
     public PipelineController(IPipelineService pipeline) => _pipeline = pipeline;
 
     [HttpPost("ingest/tarkhees")]
-    public async Task<IActionResult> IngestTarkhees([FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    public async Task<IActionResult> IngestTarkhees(IFormFile file)
     {
         if (file == null) return BadRequest("Please upload a Tarkhees license file.");
         
@@ -27,7 +29,9 @@ public class PipelineController : ControllerBase
     }
 
     [HttpPost("ingest/noor")]
-    public async Task<IActionResult> IngestNoor([FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    public async Task<IActionResult> IngestNoor(IFormFile file)
     {
         if (file == null) return BadRequest("Please upload a Noor roster file.");
         
@@ -42,7 +46,9 @@ public class PipelineController : ControllerBase
     }
 
     [HttpPost("ingest/madaris")]
-    public async Task<IActionResult> IngestMadaris([FromForm] IFormFile file)
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    public async Task<IActionResult> IngestMadaris(IFormFile file)
     {
         if (file == null) return BadRequest("Please upload a Madaris schools file.");
         
@@ -85,7 +91,9 @@ public class PipelineController : ControllerBase
     }
 
     [HttpPost("run")]
-    public async Task<IActionResult> Run([FromForm] IFormFile licenseFile, [FromForm] IFormFile noorRosterFile, [FromForm] IFormFile madarisSchoolsFile, [FromQuery] string uploadedBy = "system")
+    [Consumes("multipart/form-data")]
+    [Produces("application/json")]
+    public async Task<IActionResult> Run(IFormFile licenseFile, IFormFile noorRosterFile, IFormFile madarisSchoolsFile, [FromQuery] string uploadedBy = "system")
     {
         if (licenseFile == null || noorRosterFile == null || madarisSchoolsFile == null)
             return BadRequest("Please upload licenseFile, noorRosterFile, and madarisSchoolsFile.");
