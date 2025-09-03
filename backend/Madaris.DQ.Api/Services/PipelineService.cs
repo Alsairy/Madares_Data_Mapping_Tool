@@ -16,6 +16,13 @@ public class PipelineService : IPipelineService
     private readonly IWebHostEnvironment _env;
     private readonly IMatchingService _matching;
     private readonly IProfilesService _profiles;
+
+    private static string SanitizeForExcel(string? s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        char c = s[0];
+        return (c == '=' || c == '+' || c == '-' || c == '@') ? "'" + s : s;
+    }
     
     public PipelineService(AppDbContext db, IWebHostEnvironment env, IMatchingService matching, IProfilesService profiles)
     {
@@ -46,7 +53,9 @@ public class PipelineService : IPipelineService
                 else
                 {
                     var row = dt.NewRow();
-                    for (int i=0;i<cols.Length;i++) row[i] = cols[i];
+                    // Ensure we don't try to access more columns than exist in the DataTable
+                    int maxCols = Math.Min(cols.Length, dt.Columns.Count);
+                    for (int i=0;i<maxCols;i++) row[i] = cols[i];
                     dt.Rows.Add(row);
                 }
             }
@@ -178,15 +187,15 @@ public class PipelineService : IPipelineService
 
             if (!string.IsNullOrEmpty(studId))
             {
-                studentsWs.Cell(srow,1).Value = studId;
-                studentsWs.Cell(srow,2).Value = studName;
-                studentsWs.Cell(srow,3).Value = mappedCR;
-                studentsWs.Cell(srow,4).Value = mappedMadarisId;
-                studentsWs.Cell(srow,5).Value = mappedMadarisName;
-                studentsWs.Cell(srow,6).Value = minSch ?? "";
-                studentsWs.Cell(srow,7).Value = matchMethod;
-                studentsWs.Cell(srow,8).Value = confidence;
-                studentsWs.Cell(srow,9).Value = issues;
+                studentsWs.Cell(srow,1).SetValue(SanitizeForExcel(studId));
+                studentsWs.Cell(srow,2).SetValue(SanitizeForExcel(studName));
+                studentsWs.Cell(srow,3).SetValue(SanitizeForExcel(mappedCR));
+                studentsWs.Cell(srow,4).SetValue(SanitizeForExcel(mappedMadarisId));
+                studentsWs.Cell(srow,5).SetValue(SanitizeForExcel(mappedMadarisName));
+                studentsWs.Cell(srow,6).SetValue(SanitizeForExcel(minSch ?? ""));
+                studentsWs.Cell(srow,7).SetValue(matchMethod);
+                studentsWs.Cell(srow,8).SetValue(confidence);
+                studentsWs.Cell(srow,9).SetValue(SanitizeForExcel(issues));
                 srow++; studentsPrepared++;
             }
 
@@ -197,15 +206,15 @@ public class PipelineService : IPipelineService
                 var pname = !string.IsNullOrEmpty(nParentName) ? r[nParentName]?.ToString()?.Trim() : "";
                 if (!string.IsNullOrEmpty(pid))
                 {
-                    parentsWs.Cell(prow,1).Value = pid;
-                    parentsWs.Cell(prow,2).Value = pname;
-                    parentsWs.Cell(prow,3).Value = mappedCR;
-                    parentsWs.Cell(prow,4).Value = mappedMadarisId;
-                    parentsWs.Cell(prow,5).Value = mappedMadarisName;
-                    parentsWs.Cell(prow,6).Value = minSch ?? "";
-                    parentsWs.Cell(prow,7).Value = matchMethod;
-                    parentsWs.Cell(prow,8).Value = confidence;
-                    parentsWs.Cell(prow,9).Value = issues;
+                    parentsWs.Cell(prow,1).SetValue(SanitizeForExcel(pid));
+                    parentsWs.Cell(prow,2).SetValue(SanitizeForExcel(pname));
+                    parentsWs.Cell(prow,3).SetValue(SanitizeForExcel(mappedCR));
+                    parentsWs.Cell(prow,4).SetValue(SanitizeForExcel(mappedMadarisId));
+                    parentsWs.Cell(prow,5).SetValue(SanitizeForExcel(mappedMadarisName));
+                    parentsWs.Cell(prow,6).SetValue(SanitizeForExcel(minSch ?? ""));
+                    parentsWs.Cell(prow,7).SetValue(matchMethod);
+                    parentsWs.Cell(prow,8).SetValue(confidence);
+                    parentsWs.Cell(prow,9).SetValue(SanitizeForExcel(issues));
                     prow++; parentsPrepared++;
                 }
             }
@@ -232,7 +241,7 @@ public class PipelineService : IPipelineService
 
         using var studentParentLinksWb = new XLWorkbook();
         var linksWs = studentParentLinksWb.Worksheets.Add("student_parent_links");
-        var linkHeaders = new[]{"Ministry_Student_ID", "Ministry_Parent_ID", "Mapped_Madaris_School_ID", "Student_Name", "Parent_Name", "Match_Method", "Confidence"};
+        var linkHeaders = new[]{"Ministry_Student_ID", "Ministry_Parent_ID", "Mapped_CR", "Mapped_Madaris_School_ID", "Student_Name", "Parent_Name", "Match_Method", "Confidence"};
         for (int i=0;i<linkHeaders.Length;i++) linksWs.Cell(1, i+1).Value = linkHeaders[i];
 
         int linkRow = 2;
@@ -246,24 +255,40 @@ public class PipelineService : IPipelineService
 
             if (!string.IsNullOrEmpty(studId) && !string.IsNullOrEmpty(pid))
             {
+                string mappedCR = "";
                 string mappedMadarisId = "";
                 string matchMethod = "NoMatch";
                 double confidence = 0.0;
 
-                if (!string.IsNullOrEmpty(minSch) && minSchoolToCR.TryGetValue(minSch, out var cr) && crToMadaris.TryGetValue(cr, out var mm))
+                if (!string.IsNullOrEmpty(minSch) && minSchoolToCR.TryGetValue(minSch, out var cr))
                 {
-                    mappedMadarisId = mm.madarisId;
-                    matchMethod = "TarkheesBridge";
-                    confidence = 0.99;
+                    mappedCR = cr;
+                    if (crToMadaris.TryGetValue(cr, out var mm))
+                    {
+                        mappedMadarisId = mm.madarisId;
+                        matchMethod = "TarkheesBridge";
+                        confidence = 0.99;
+                    }
+                    else
+                    {
+                        matchMethod = "CRNotInMadaris";
+                        confidence = 0.8;
+                    }
+                }
+                else
+                {
+                    matchMethod = "NoMinistrySchoolIdOrNoBridge";
+                    confidence = 0.5;
                 }
 
-                linksWs.Cell(linkRow,1).Value = studId;
-                linksWs.Cell(linkRow,2).Value = pid;
-                linksWs.Cell(linkRow,3).Value = mappedMadarisId;
-                linksWs.Cell(linkRow,4).Value = studName;
-                linksWs.Cell(linkRow,5).Value = pname;
-                linksWs.Cell(linkRow,6).Value = matchMethod;
-                linksWs.Cell(linkRow,7).Value = confidence;
+                linksWs.Cell(linkRow,1).SetValue(SanitizeForExcel(studId));
+                linksWs.Cell(linkRow,2).SetValue(SanitizeForExcel(pid));
+                linksWs.Cell(linkRow,3).SetValue(SanitizeForExcel(mappedCR));
+                linksWs.Cell(linkRow,4).SetValue(SanitizeForExcel(mappedMadarisId));
+                linksWs.Cell(linkRow,5).SetValue(SanitizeForExcel(studName));
+                linksWs.Cell(linkRow,6).SetValue(SanitizeForExcel(pname));
+                linksWs.Cell(linkRow,7).SetValue(matchMethod);
+                linksWs.Cell(linkRow,8).SetValue(confidence);
                 linkRow++;
             }
         }
