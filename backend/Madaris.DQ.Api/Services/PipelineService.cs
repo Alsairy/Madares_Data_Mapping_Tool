@@ -230,7 +230,7 @@ public class PipelineService : IPipelineService
             $"exceptions,{exceptions}\n"
         );
 
-        var studentParentLinksWb = new XLWorkbook();
+        using var studentParentLinksWb = new XLWorkbook();
         var linksWs = studentParentLinksWb.Worksheets.Add("student_parent_links");
         var linkHeaders = new[]{"Ministry_Student_ID", "Ministry_Parent_ID", "Mapped_Madaris_School_ID", "Student_Name", "Parent_Name", "Match_Method", "Confidence"};
         for (int i=0;i<linkHeaders.Length;i++) linksWs.Cell(1, i+1).Value = linkHeaders[i];

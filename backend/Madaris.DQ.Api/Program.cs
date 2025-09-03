@@ -14,7 +14,16 @@ if (useInMemory)
 else
 {
     builder.Services.AddDbContext<AppDbContext>(opts =>
-        opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+        opts.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            sql =>
+            {
+                sql.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(30),
+                    errorNumbersToAdd: null);
+                sql.CommandTimeout(60);
+            }));
 }
 
 builder.Services.AddScoped<IIngestionService, IngestionService>();

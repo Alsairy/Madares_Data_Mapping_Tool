@@ -128,8 +128,10 @@ public class InjectionService : IInjectionService
                     if (!simulate)
                     {
                         await MergeSchoolDataAsync(existing, school);
-                        await CreateAuditEntryAsync(school.Id, "School", "Updated", 
-                            $"Merged data from batch school {school.Id}", null, school);
+                        await CreateAuditEntryAsync(existing.Id, "School", "Updated",
+                            $"Merged data from batch school {school.Id}",
+                            null,
+                            new { school.NameAr, school.NameEn, school.Region, school.City, school.District, school.StagesCsv, school.Status });
                     }
                     updated++;
                 }
@@ -138,8 +140,10 @@ public class InjectionService : IInjectionService
                     if (!simulate)
                     {
                         school.MasterSchoolId = Guid.NewGuid().ToString();
-                        await CreateAuditEntryAsync(school.Id, "School", "Created", 
-                            $"Created new school from batch", null, school);
+                        await CreateAuditEntryAsync(school.Id, "School", "Created",
+                            "Created new school from batch",
+                            null,
+                            new { school.NameAr, school.NameEn, school.Region, school.City, school.District, school.StagesCsv, school.Status });
                     }
                     created++;
                 }
@@ -179,8 +183,10 @@ public class InjectionService : IInjectionService
                     if (!simulate)
                     {
                         await MergeStudentDataAsync(existing, student);
-                        await CreateAuditEntryAsync(student.Id, "Student", "Updated", 
-                            $"Merged data from batch student {student.Id}", null, student);
+                        await CreateAuditEntryAsync(existing.Id, "Student", "Updated",
+                            $"Merged data from batch student {student.Id}",
+                            null,
+                            new { student.FullNameAr, student.FullNameEn, student.DOB, student.Gender, student.Nationality, student.PhonesCsv, student.EmailsCsv, student.Address });
                     }
                     updated++;
                 }
@@ -189,8 +195,10 @@ public class InjectionService : IInjectionService
                     if (!simulate)
                     {
                         student.MasterStudentId = Guid.NewGuid().ToString();
-                        await CreateAuditEntryAsync(student.Id, "Student", "Created", 
-                            $"Created new student from batch", null, student);
+                        await CreateAuditEntryAsync(student.Id, "Student", "Created",
+                            "Created new student from batch",
+                            null,
+                            new { student.FullNameAr, student.FullNameEn, student.DOB, student.Gender, student.Nationality, student.PhonesCsv, student.EmailsCsv, student.Address });
                     }
                     created++;
                 }
@@ -230,8 +238,10 @@ public class InjectionService : IInjectionService
                     if (!simulate)
                     {
                         await MergeParentDataAsync(existing, parent);
-                        await CreateAuditEntryAsync(parent.Id, "Parent", "Updated", 
-                            $"Merged data from batch parent {parent.Id}", null, parent);
+                        await CreateAuditEntryAsync(existing.Id, "Parent", "Updated",
+                            $"Merged data from batch parent {parent.Id}",
+                            null,
+                            new { parent.FullNameAr, parent.FullNameEn, parent.PhonesCsv, parent.EmailsCsv, parent.Address });
                     }
                     updated++;
                 }
@@ -240,8 +250,10 @@ public class InjectionService : IInjectionService
                     if (!simulate)
                     {
                         parent.MasterParentId = Guid.NewGuid().ToString();
-                        await CreateAuditEntryAsync(parent.Id, "Parent", "Created", 
-                            $"Created new parent from batch", null, parent);
+                        await CreateAuditEntryAsync(parent.Id, "Parent", "Created",
+                            "Created new parent from batch",
+                            null,
+                            new { parent.FullNameAr, parent.FullNameEn, parent.PhonesCsv, parent.EmailsCsv, parent.Address });
                     }
                     created++;
                 }
