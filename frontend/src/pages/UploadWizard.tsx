@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import api from '../services/api'
 
 interface FileUpload {
@@ -7,6 +7,15 @@ interface FileUpload {
   uploading: boolean
   error?: string
   batchId?: string
+  progress?: number
+}
+
+interface ProcessingStatus {
+  isProcessing: boolean
+  jobId?: string
+  progress?: number
+  status?: string
+  error?: string
 }
 
 export default function UploadWizard() {
@@ -16,11 +25,19 @@ export default function UploadWizard() {
     noor: FileUpload
     madaris: FileUpload
   }>({
-    tarkhees: { file: null, uploaded: false, uploading: false },
-    noor: { file: null, uploaded: false, uploading: false },
-    madaris: { file: null, uploaded: false, uploading: false }
+    tarkhees: { file: null, uploaded: false, uploading: false, progress: 0 },
+    noor: { file: null, uploaded: false, uploading: false, progress: 0 },
+    madaris: { file: null, uploaded: false, uploading: false, progress: 0 }
   })
   const [globalUploading, setGlobalUploading] = useState(false)
+  const [processing, setProcessing] = useState<ProcessingStatus>({ isProcessing: false })
+  const [showSuccess, setShowSuccess] = useState(false)
+  
+  const fileInputRefs = {
+    tarkhees: useRef<HTMLInputElement>(null),
+    noor: useRef<HTMLInputElement>(null),
+    madaris: useRef<HTMLInputElement>(null)
+  }
 
   const handleFileSelect = (type: keyof typeof files, file: File) => {
     setFiles(prev => ({
