@@ -102,9 +102,6 @@ const UploadWizard: React.FC = () => {
 
     try {
       const response = await api.post(endpoint, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1))
           console.log(`Upload progress: ${percentCompleted}%`)
@@ -150,11 +147,7 @@ const UploadWizard: React.FC = () => {
     if (madaris.file) formData.append('madarisSchoolsFile', madaris.file)
 
     try {
-      const response = await api.post('/api/pipeline/run', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
-      })
+      const response = await api.post('/api/pipeline/run', formData)
       setJobId(response.data.jobId || response.data.batchId || 'Processing started')
       setProcessing(false)
     } catch (error: any) {

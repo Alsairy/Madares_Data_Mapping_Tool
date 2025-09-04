@@ -15,8 +15,7 @@ const api = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
-    'bypass-tunnel-reminder': 'true',
-    'User-Agent': 'MadarisDQTool/1.0'
+    'bypass-tunnel-reminder': 'true'
   },
   withCredentials: false
 })
