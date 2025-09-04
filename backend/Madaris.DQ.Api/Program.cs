@@ -40,47 +40,13 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowAll", policy => policy
-        .SetIsOriginAllowed(origin => 
-        {
-            return origin == "https://data-mapping-assessment-app-x5jb4izt.devinapps.com" ||
-                   origin?.StartsWith("http://localhost") == true ||
-                   origin?.StartsWith("https://localhost") == true;
-        })
+        .AllowAnyOrigin()
         .AllowAnyHeader()
         .AllowAnyMethod()
-        .AllowCredentials()
         .WithExposedHeaders("Content-Length", "Content-Range", "Content-Disposition"));
 });
 
 var app = builder.Build();
-
-app.Use(async (context, next) =>
-{
-    var origin = context.Request.Headers["Origin"].ToString();
-    
-    if (!string.IsNullOrEmpty(origin))
-    {
-        context.Response.Headers["Access-Control-Allow-Origin"] = origin;
-        context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
-    }
-    else
-    {
-        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
-    }
-    
-    context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH";
-    context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, X-File-Name";
-    context.Response.Headers["Access-Control-Max-Age"] = "86400";
-    context.Response.Headers["Access-Control-Expose-Headers"] = "Content-Length, Content-Range, Content-Disposition";
-    
-    if (context.Request.Method == "OPTIONS")
-    {
-        context.Response.StatusCode = 204; // No Content is more appropriate for OPTIONS
-        return;
-    }
-    
-    await next();
-});
 
 app.UseCors("AllowAll");
 
