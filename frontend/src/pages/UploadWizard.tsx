@@ -82,202 +82,337 @@ export default function UploadWizard() {
 
   return (
     <div style={{ 
-      padding: '40px 20px', 
-      maxWidth: '900px', 
-      margin: '0 auto',
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      padding: '40px 20px',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <h1 style={{ 
-          fontSize: '2.5rem', 
-          fontWeight: '700', 
-          color: '#1a365d',
-          marginBottom: '10px'
-        }}>
-          Madaris Data Upload Wizard
-        </h1>
-        <p style={{ 
-          fontSize: '1.1rem', 
-          color: '#4a5568',
-          marginBottom: '0'
-        }}>
-          Upload your data files to begin the mapping process
-        </p>
-      </div>
-      
-      <div style={{ marginBottom: '40px' }}>
+      <div style={{
+        maxWidth: '1000px',
+        margin: '0 auto',
+        background: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: '20px',
+        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+        overflow: 'hidden'
+      }}>
         <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          marginBottom: '30px',
-          position: 'relative'
+          background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          padding: '40px',
+          textAlign: 'center',
+          color: 'white'
         }}>
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            left: '10%',
-            right: '10%',
-            height: '2px',
-            backgroundColor: '#e2e8f0',
-            zIndex: 1
+          <h1 style={{ 
+            fontSize: '3rem', 
+            fontWeight: '800', 
+            marginBottom: '15px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)'
           }}>
-            <div style={{
-              height: '100%',
-              backgroundColor: '#3182ce',
-              width: `${((step - 1) / 2) * 100}%`,
-              transition: 'width 0.3s ease'
-            }}></div>
-          </div>
-          {[1, 2, 3].map(s => (
-            <div key={s} style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              zIndex: 2,
+            🎯 Madaris Data Upload Wizard
+          </h1>
+          <p style={{ 
+            fontSize: '1.3rem', 
+            opacity: '0.9',
+            marginBottom: '0',
+            fontWeight: '300'
+          }}>
+            Transform your data with our intelligent mapping system
+          </p>
+        </div>
+        
+          <div style={{ marginBottom: '50px' }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              marginBottom: '40px',
               position: 'relative'
             }}>
               <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: step >= s ? '#3182ce' : '#e2e8f0',
-                color: step >= s ? 'white' : '#a0aec0',
+                position: 'absolute',
+                top: '25px',
+                left: '10%',
+                right: '10%',
+                height: '4px',
+                backgroundColor: '#e2e8f0',
+                borderRadius: '2px',
+                zIndex: 1
+              }}>
+                <div style={{
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #4facfe 0%, #00f2fe 100%)',
+                  width: `${((step - 1) / 2) * 100}%`,
+                  transition: 'width 0.5s ease',
+                  borderRadius: '2px'
+                }}></div>
+              </div>
+              {[1, 2, 3].map(s => (
+                <div key={s} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  zIndex: 2,
+                  position: 'relative'
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '50%',
+                    background: step >= s ? 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' : '#f7fafc',
+                    color: step >= s ? 'white' : '#a0aec0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '700',
+                    fontSize: '1.2rem',
+                    marginBottom: '12px',
+                    transition: 'all 0.3s ease',
+                    border: step >= s ? '3px solid white' : '3px solid #e2e8f0',
+                    boxShadow: step >= s ? '0 8px 25px rgba(79, 172, 254, 0.3)' : '0 2px 4px rgba(0,0,0,0.1)'
+                  }}>
+                    {step > s ? '✓' : s}
+                  </div>
+                  <span style={{
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    color: step >= s ? '#2d3748' : '#718096',
+                    textAlign: 'center',
+                    maxWidth: '120px'
+                  }}>
+                    {s === 1 ? '📄 Tarkhees License' : s === 2 ? '👥 Noor Roster' : '🏫 Madaris Schools'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {step === 1 && (
+            <div style={{ 
+              background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+              borderRadius: '15px',
+              padding: '40px',
+              border: '1px solid #e2e8f0'
+            }}>
+              <h2 style={{ 
+                fontSize: '2rem', 
+                fontWeight: '700', 
+                color: '#2d3748',
+                marginBottom: '15px',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: '600',
-                fontSize: '1.1rem',
-                marginBottom: '8px',
-                transition: 'all 0.3s ease',
-                border: '3px solid white',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                gap: '10px'
               }}>
-                {step > s ? '✓' : s}
-              </div>
-              <span style={{
-                fontSize: '0.9rem',
-                fontWeight: '500',
-                color: step >= s ? '#3182ce' : '#718096',
-                textAlign: 'center'
+                📄 Step 1: Upload Tarkhees License Data
+              </h2>
+              <p style={{ 
+                fontSize: '1.1rem', 
+                color: '#4a5568',
+                marginBottom: '30px'
               }}>
-                {s === 1 ? 'Tarkhees License' : s === 2 ? 'Noor Roster' : 'Madaris Schools'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {step === 1 && (
-        <div>
-          <h2>Step 1: Upload Tarkhees License Data</h2>
-          <p>Upload the Tarkhees license file (Excel or CSV format)</p>
-          
-          <div style={{ border: '2px dashed #ccc', padding: '40px', textAlign: 'center', marginBottom: '20px' }}>
-            <input
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={(e) => e.target.files && handleFileSelect('tarkhees', e.target.files[0])}
-              style={{ marginBottom: '10px' }}
-            />
-            {files.tarkhees.file && (
-              <div>
-                <p>Selected: {files.tarkhees.file.name}</p>
-                <button 
-                  onClick={() => uploadFile('tarkhees')}
-                  disabled={files.tarkhees.uploading || files.tarkhees.uploaded}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: files.tarkhees.uploaded ? '#28a745' : '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: files.tarkhees.uploading ? 'not-allowed' : 'pointer'
+                Upload the Tarkhees license file (Excel or CSV format)
+              </p>
+              
+              <div style={{ 
+                border: '3px dashed #4facfe', 
+                borderRadius: '15px',
+                padding: '50px', 
+                textAlign: 'center', 
+                marginBottom: '30px',
+                background: 'rgba(79, 172, 254, 0.05)',
+                transition: 'all 0.3s ease'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '20px' }}>📁</div>
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={(e) => e.target.files && handleFileSelect('tarkhees', e.target.files[0])}
+                  style={{ 
+                    marginBottom: '20px',
+                    padding: '10px',
+                    fontSize: '1rem',
+                    borderRadius: '8px',
+                    border: '2px solid #e2e8f0'
                   }}
-                >
-                  {files.tarkhees.uploaded ? 'Uploaded ✓' : files.tarkhees.uploading ? 'Uploading...' : 'Upload File'}
-                </button>
+                />
+                {files.tarkhees.file && (
+                  <div style={{ marginTop: '20px' }}>
+                    <p style={{ 
+                      fontSize: '1.1rem', 
+                      fontWeight: '600', 
+                      color: '#2d3748',
+                      marginBottom: '20px'
+                    }}>
+                      ✅ Selected: {files.tarkhees.file.name}
+                    </p>
+                    <button 
+                      onClick={() => uploadFile('tarkhees')}
+                      disabled={files.tarkhees.uploading || files.tarkhees.uploaded}
+                      style={{
+                        padding: '15px 30px',
+                        fontSize: '1.1rem',
+                        fontWeight: '600',
+                        background: files.tarkhees.uploaded ? 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)' : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: files.tarkhees.uploading ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      {files.tarkhees.uploaded ? '✅ Uploaded Successfully!' : files.tarkhees.uploading ? '⏳ Uploading...' : '🚀 Upload File'}
+                    </button>
+                    {files.tarkhees.error && (
+                      <p style={{ color: '#e53e3e', marginTop: '10px', fontWeight: '600' }}>
+                        ❌ {files.tarkhees.error}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          
-          {files.tarkhees.uploaded && (
-            <button 
-              onClick={() => setStep(2)}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
-              }}
-            >
-              Next Step →
-            </button>
+              
+              {files.tarkhees.uploaded && (
+                <div style={{ textAlign: 'center' }}>
+                  <button 
+                    onClick={() => setStep(2)}
+                    style={{
+                      padding: '15px 30px',
+                      fontSize: '1.1rem',
+                      fontWeight: '600',
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    Next Step → 👥
+                  </button>
+                </div>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
       {step === 2 && (
-        <div>
-          <h2>Step 2: Upload Noor Roster Data</h2>
-          <p>Upload the Noor roster file (Excel format)</p>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+          borderRadius: '15px',
+          padding: '40px',
+          border: '1px solid #e2e8f0'
+        }}>
+          <h2 style={{ 
+            fontSize: '2rem', 
+            fontWeight: '700', 
+            color: '#2d3748',
+            marginBottom: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            👥 Step 2: Upload Noor Roster Data
+          </h2>
+          <p style={{ 
+            fontSize: '1.1rem', 
+            color: '#4a5568',
+            marginBottom: '30px'
+          }}>
+            Upload the Noor roster file (Excel format)
+          </p>
           
-          <div style={{ border: '2px dashed #ccc', padding: '40px', textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{ 
+            border: '3px dashed #4facfe', 
+            borderRadius: '15px',
+            padding: '50px', 
+            textAlign: 'center', 
+            marginBottom: '30px',
+            background: 'rgba(79, 172, 254, 0.05)',
+            transition: 'all 0.3s ease'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '20px' }}>👥</div>
             <input
               type="file"
               accept=".xlsx,.xls"
               onChange={(e) => e.target.files && handleFileSelect('noor', e.target.files[0])}
-              style={{ marginBottom: '10px' }}
+              style={{ 
+                marginBottom: '20px',
+                padding: '10px',
+                fontSize: '1rem',
+                borderRadius: '8px',
+                border: '2px solid #e2e8f0'
+              }}
             />
             {files.noor.file && (
-              <div>
-                <p>Selected: {files.noor.file.name}</p>
+              <div style={{ marginTop: '20px' }}>
+                <p style={{ 
+                  fontSize: '1.1rem', 
+                  fontWeight: '600', 
+                  color: '#2d3748',
+                  marginBottom: '20px'
+                }}>
+                  ✅ Selected: {files.noor.file.name}
+                </p>
                 <button 
                   onClick={() => uploadFile('noor')}
                   disabled={files.noor.uploading || files.noor.uploaded}
                   style={{
-                    padding: '10px 20px',
-                    backgroundColor: files.noor.uploaded ? '#28a745' : '#007bff',
+                    padding: '15px 30px',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    background: files.noor.uploaded ? 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)' : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: files.noor.uploading ? 'not-allowed' : 'pointer'
+                    borderRadius: '10px',
+                    cursor: files.noor.uploading ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)',
+                    transition: 'all 0.3s ease'
                   }}
                 >
-                  {files.noor.uploaded ? 'Uploaded ✓' : files.noor.uploading ? 'Uploading...' : 'Upload File'}
+                  {files.noor.uploaded ? '✅ Uploaded Successfully!' : files.noor.uploading ? '⏳ Uploading...' : '🚀 Upload File'}
                 </button>
+                {files.noor.error && (
+                  <p style={{ color: '#e53e3e', marginTop: '10px', fontWeight: '600' }}>
+                    ❌ {files.noor.error}
+                  </p>
+                )}
               </div>
             )}
           </div>
           
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
             <button 
               onClick={() => setStep(1)}
               style={{
-                padding: '10px 20px',
-                backgroundColor: '#6c757d',
+                padding: '15px 30px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #718096 0%, #4a5568 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
+                borderRadius: '10px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(113, 128, 150, 0.3)',
+                transition: 'all 0.3s ease'
               }}
             >
-              ← Previous
+              ← Previous Step
             </button>
             {files.noor.uploaded && (
               <button 
                 onClick={() => setStep(3)}
                 style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#007bff',
+                  padding: '15px 30px',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer'
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  transition: 'all 0.3s ease'
                 }}
               >
-                Next Step →
+                Next Step → 🏫
               </button>
             )}
           </div>
@@ -285,71 +420,132 @@ export default function UploadWizard() {
       )}
 
       {step === 3 && (
-        <div>
-          <h2>Step 3: Upload Madaris Schools Data</h2>
-          <p>Upload the Madaris schools file (Excel or CSV format)</p>
+        <div style={{ 
+          background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
+          borderRadius: '15px',
+          padding: '40px',
+          border: '1px solid #e2e8f0'
+        }}>
+          <h2 style={{ 
+            fontSize: '2rem', 
+            fontWeight: '700', 
+            color: '#2d3748',
+            marginBottom: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+          }}>
+            🏫 Step 3: Upload Madaris Schools Data
+          </h2>
+          <p style={{ 
+            fontSize: '1.1rem', 
+            color: '#4a5568',
+            marginBottom: '30px'
+          }}>
+            Upload the Madaris schools file (Excel or CSV format)
+          </p>
           
-          <div style={{ border: '2px dashed #ccc', padding: '40px', textAlign: 'center', marginBottom: '20px' }}>
+          <div style={{ 
+            border: '3px dashed #4facfe', 
+            borderRadius: '15px',
+            padding: '50px', 
+            textAlign: 'center', 
+            marginBottom: '30px',
+            background: 'rgba(79, 172, 254, 0.05)',
+            transition: 'all 0.3s ease'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🏫</div>
             <input
               type="file"
               accept=".xlsx,.xls,.csv"
               onChange={(e) => e.target.files && handleFileSelect('madaris', e.target.files[0])}
-              style={{ marginBottom: '10px' }}
+              style={{ 
+                marginBottom: '20px',
+                padding: '10px',
+                fontSize: '1rem',
+                borderRadius: '8px',
+                border: '2px solid #e2e8f0'
+              }}
             />
             {files.madaris.file && (
-              <div>
-                <p>Selected: {files.madaris.file.name}</p>
+              <div style={{ marginTop: '20px' }}>
+                <p style={{ 
+                  fontSize: '1.1rem', 
+                  fontWeight: '600', 
+                  color: '#2d3748',
+                  marginBottom: '20px'
+                }}>
+                  ✅ Selected: {files.madaris.file.name}
+                </p>
                 <button 
                   onClick={() => uploadFile('madaris')}
                   disabled={files.madaris.uploading || files.madaris.uploaded}
                   style={{
-                    padding: '10px 20px',
-                    backgroundColor: files.madaris.uploaded ? '#28a745' : '#007bff',
+                    padding: '15px 30px',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    background: files.madaris.uploaded ? 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)' : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: files.madaris.uploading ? 'not-allowed' : 'pointer'
+                    borderRadius: '10px',
+                    cursor: files.madaris.uploading ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)',
+                    transition: 'all 0.3s ease'
                   }}
                 >
-                  {files.madaris.uploaded ? 'Uploaded ✓' : files.madaris.uploading ? 'Uploading...' : 'Upload File'}
+                  {files.madaris.uploaded ? '✅ Uploaded Successfully!' : files.madaris.uploading ? '⏳ Uploading...' : '🚀 Upload File'}
                 </button>
+                {files.madaris.error && (
+                  <p style={{ color: '#e53e3e', marginTop: '10px', fontWeight: '600' }}>
+                    ❌ {files.madaris.error}
+                  </p>
+                )}
               </div>
             )}
           </div>
           
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
             <button 
               onClick={() => setStep(2)}
               style={{
-                padding: '10px 20px',
-                backgroundColor: '#6c757d',
+                padding: '15px 30px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                background: 'linear-gradient(135deg, #718096 0%, #4a5568 100%)',
                 color: 'white',
                 border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer'
+                borderRadius: '10px',
+                cursor: 'pointer',
+                boxShadow: '0 4px 15px rgba(113, 128, 150, 0.3)',
+                transition: 'all 0.3s ease'
               }}
             >
-              ← Previous
+              ← Previous Step
             </button>
             {allFilesUploaded && (
               <button 
                 onClick={startProcessing}
                 disabled={globalUploading}
                 style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#28a745',
+                  padding: '15px 30px',
+                  fontSize: '1.1rem',
+                  fontWeight: '600',
+                  background: globalUploading ? 'linear-gradient(135deg, #fbb6ce 0%, #f687b3 100%)' : 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '5px',
-                  cursor: globalUploading ? 'not-allowed' : 'pointer'
+                  borderRadius: '10px',
+                  cursor: globalUploading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 4px 15px rgba(72, 187, 120, 0.3)',
+                  transition: 'all 0.3s ease'
                 }}
               >
-                {globalUploading ? 'Processing...' : 'Start Processing →'}
+                {globalUploading ? '⏳ Processing Pipeline...' : '🚀 Start Processing →'}
               </button>
             )}
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
