@@ -40,7 +40,11 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddCors(options => {
     options.AddPolicy("AllowFrontend", policy => policy
-        .WithOrigins("https://data-mapping-assessment-app-x5jb4izt.devinapps.com")
+        .WithOrigins(
+            "https://data-mapping-assessment-app-x5jb4izt.devinapps.com",
+            "http://localhost:3000",
+            "http://localhost:5173"
+        )
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()

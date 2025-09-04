@@ -14,7 +14,7 @@ public class PipelineController : ControllerBase
     [HttpPost("ingest/tarkhees")]
     [Consumes("multipart/form-data")]
     [Produces("application/json")]
-    public async Task<IActionResult> IngestTarkhees(IFormFile file)
+    public async Task<IActionResult> IngestTarkhees([FromForm] IFormFile file)
     {
         if (file == null) return BadRequest("Please upload a Tarkhees license file.");
         
@@ -31,7 +31,7 @@ public class PipelineController : ControllerBase
     [HttpPost("ingest/noor")]
     [Consumes("multipart/form-data")]
     [Produces("application/json")]
-    public async Task<IActionResult> IngestNoor(IFormFile file)
+    public async Task<IActionResult> IngestNoor([FromForm] IFormFile file)
     {
         if (file == null) return BadRequest("Please upload a Noor roster file.");
         
@@ -48,7 +48,7 @@ public class PipelineController : ControllerBase
     [HttpPost("ingest/madaris")]
     [Consumes("multipart/form-data")]
     [Produces("application/json")]
-    public async Task<IActionResult> IngestMadaris(IFormFile file)
+    public async Task<IActionResult> IngestMadaris([FromForm] IFormFile file)
     {
         if (file == null) return BadRequest("Please upload a Madaris schools file.");
         
@@ -93,7 +93,7 @@ public class PipelineController : ControllerBase
     [HttpPost("run")]
     [Consumes("multipart/form-data")]
     [Produces("application/json")]
-    public async Task<IActionResult> Run(IFormFile licenseFile, IFormFile noorRosterFile, IFormFile madarisSchoolsFile, [FromQuery] string uploadedBy = "system")
+    public async Task<IActionResult> Run([FromForm] IFormFile licenseFile, [FromForm] IFormFile noorRosterFile, [FromForm] IFormFile madarisSchoolsFile, [FromQuery] string uploadedBy = "system")
     {
         if (licenseFile == null || noorRosterFile == null || madarisSchoolsFile == null)
             return BadRequest("Please upload licenseFile, noorRosterFile, and madarisSchoolsFile.");
