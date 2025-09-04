@@ -47,6 +47,7 @@ builder.Services.AddCors(options => {
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
+        .SetIsOriginAllowed(origin => true)
         .AllowCredentials()
         .WithExposedHeaders("Content-Length", "Content-Range", "Content-Disposition"));
 });

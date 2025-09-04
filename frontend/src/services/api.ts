@@ -15,8 +15,10 @@ const api = axios.create({
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
+    'bypass-tunnel-reminder': 'true',
+    'User-Agent': 'MadarisDQTool/1.0'
   },
-  withCredentials: true
+  withCredentials: false
 })
 
 api.interceptors.request.use(
