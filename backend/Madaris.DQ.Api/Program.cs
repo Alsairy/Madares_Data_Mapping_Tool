@@ -39,15 +39,43 @@ builder.Services.AddSwaggerGen(c =>
     c.OperationFilter<FileUploadOperationFilter>();
 });
 builder.Services.AddCors(options => {
-    options.AddPolicy("all", p => p
-        .AllowAnyOrigin()
+    options.AddPolicy("AllowAll", policy => policy
+        .SetIsOriginAllowed(origin => true)
         .AllowAnyHeader()
-        .AllowAnyMethod());
+        .AllowAnyMethod()
+        .AllowCredentials());
 });
 
 var app = builder.Build();
 
-app.UseCors("all");
+app.Use(async (context, next) =>
+{
+    var origin = context.Request.Headers["Origin"].ToString();
+    
+    if (!string.IsNullOrEmpty(origin))
+    {
+        context.Response.Headers["Access-Control-Allow-Origin"] = origin;
+    }
+    else
+    {
+        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+    }
+    
+    context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS";
+    context.Response.Headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With";
+    context.Response.Headers["Access-Control-Allow-Credentials"] = "true";
+    
+    if (context.Request.Method == "OPTIONS")
+    {
+        context.Response.StatusCode = 200;
+        await context.Response.WriteAsync("");
+        return;
+    }
+    
+    await next();
+});
+
+app.UseCors("AllowAll");
 
 app.UseSwagger();
 app.UseSwaggerUI();
