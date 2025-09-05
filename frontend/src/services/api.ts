@@ -1,10 +1,18 @@
 import axios, { AxiosError } from 'axios'
 
-function getBaseURL() {
-  const runtime = (window as any).__APP_CONFIG__ || {}
-  const baseURL = runtime.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-  console.log('API baseURL (runtime first):', baseURL)
-  return baseURL
+async function getBaseURL() {
+  try {
+    const res = await fetch('/config.json', { cache: 'no-store' })
+    const config = await res.json()
+    console.log('API baseURL (fresh config):', config.apiBaseUrl)
+    return config.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+  } catch (error) {
+    console.error('Failed to load fresh config, using fallback:', error)
+    const runtime = (window as any).__APP_CONFIG__ || {}
+    const baseURL = runtime.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+    console.log('API baseURL (fallback):', baseURL)
+    return baseURL
+  }
 }
 
 const api = axios.create({ 
@@ -17,8 +25,8 @@ const api = axios.create({
 })
 
 api.interceptors.request.use(
-  (config) => {
-    config.baseURL = getBaseURL()
+  async (config) => {
+    config.baseURL = await getBaseURL()
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
