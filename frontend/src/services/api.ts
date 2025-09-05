@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 
 function getBaseURL() {
   const runtime = (window as any).__APP_CONFIG__ || {}
@@ -22,6 +22,11 @@ api.interceptors.request.use(
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
+    console.debug('[API][REQ]', config.method?.toUpperCase(), config.url, {
+      baseURL: config.baseURL, 
+      params: config.params, 
+      headers: config.headers,
+    })
     return config
   },
   (error) => {
@@ -29,12 +34,22 @@ api.interceptors.request.use(
   }
 )
 
-
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message)
-    return Promise.reject(error)
+  (err: AxiosError) => {
+    const info = {
+      message: err.message,
+      code: (err as any).code,
+      url: (err.config?.baseURL || '') + (err.config?.url || ''),
+      method: err.config?.method,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      headers: err.response?.headers,
+      isCORS: !err.response && !!(err as any).request,
+    }
+    console.error('[API][ERR]', info)
+    return Promise.reject(err)
   }
 )
 

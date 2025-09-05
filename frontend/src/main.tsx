@@ -6,9 +6,13 @@ import './styles/globals.css'
 
 async function loadConfig() {
   try {
+    console.log('Loading runtime config...')
     const res = await fetch('/config.json', { cache: 'no-store' })
-    ;(window as any).__APP_CONFIG__ = await res.json()
-  } catch {
+    const config = await res.json()
+    ;(window as any).__APP_CONFIG__ = config
+    console.log('Runtime config loaded:', config)
+  } catch (error) {
+    console.error('Failed to load runtime config:', error)
     ;(window as any).__APP_CONFIG__ = {}
   }
 }
