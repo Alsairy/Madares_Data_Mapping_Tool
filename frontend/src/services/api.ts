@@ -1,13 +1,13 @@
 import axios from 'axios'
 
-const runtime = (window as any).__APP_CONFIG__ || {}
-const baseURL =
-  runtime.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-
-console.log('API baseURL (runtime first):', baseURL)
+function getBaseURL() {
+  const runtime = (window as any).__APP_CONFIG__ || {}
+  const baseURL = runtime.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+  console.log('API baseURL (runtime first):', baseURL)
+  return baseURL
+}
 
 const api = axios.create({ 
-  baseURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -18,6 +18,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    config.baseURL = getBaseURL()
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }
@@ -27,6 +28,7 @@ api.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+
 
 api.interceptors.response.use(
   (response) => response,
