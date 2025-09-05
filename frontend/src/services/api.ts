@@ -55,8 +55,10 @@ api.interceptors.response.use(
       data: err.response?.data,
       headers: err.response?.headers,
       isCORS: !err.response && !!(err as any).request,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent
     }
-    console.error('[API][ERR]', info)
+    console.error('[API][ERR] DETAILED ERROR INFO:', info)
     return Promise.reject(err)
   }
 )
