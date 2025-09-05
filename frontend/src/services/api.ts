@@ -1,47 +1,23 @@
 import axios from 'axios'
 
-function getBaseURL() {
-  const runtime = (window as any).__APP_CONFIG__ || {}
-  const baseURL = 
-    runtime.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-  
-  console.log('=== API Configuration Debug ===')
-  console.log('Runtime config:', runtime)
-  console.log('Runtime apiBaseUrl:', runtime.apiBaseUrl)
-  console.log('Build-time VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL)
-  console.log('Final API baseURL (runtime first):', baseURL)
-  console.log('=== End Debug ===')
-  
-  return baseURL
-}
+const runtime = (window as any).__APP_CONFIG__ || {}
+const baseURL =
+  runtime.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 
-const auth = 
-  import.meta.env.VITE_API_BASIC_AUTH_USER && import.meta.env.VITE_API_BASIC_AUTH_PASS
-    ? {
-        username: import.meta.env.VITE_API_BASIC_AUTH_USER as string,
-        password: import.meta.env.VITE_API_BASIC_AUTH_PASS as string
-      }
-    : undefined
+console.log('API baseURL (runtime first):', baseURL)
 
 const api = axios.create({ 
+  baseURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     'bypass-tunnel-reminder': 'true'
   },
-  withCredentials: false,
-  auth
+  withCredentials: false
 })
 
 api.interceptors.request.use(
   (config) => {
-    const runtime = (window as any).__APP_CONFIG__ || {}
-    const dynamicBaseURL = 
-      runtime.apiBaseUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
-    
-    config.baseURL = dynamicBaseURL
-    console.log('Request interceptor - using baseURL:', dynamicBaseURL)
-    
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type']
     }

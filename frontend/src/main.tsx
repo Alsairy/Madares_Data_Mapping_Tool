@@ -6,16 +6,15 @@ import './styles/globals.css'
 
 async function loadConfig() {
   try {
-    const res = await fetch('/config.json', { cache: 'no-store' });
-    const cfg = await res.json();
-    (window as any).__APP_CONFIG__ = cfg;
+    const res = await fetch('/config.json', { cache: 'no-store' })
+    ;(window as any).__APP_CONFIG__ = await res.json()
   } catch {
-    (window as any).__APP_CONFIG__ = {};
+    ;(window as any).__APP_CONFIG__ = {}
   }
 }
 
 async function bootstrap() {
-  await loadConfig();
+  await loadConfig()
   
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
@@ -25,7 +24,7 @@ async function bootstrap() {
         </Routes>
       </BrowserRouter>
     </React.StrictMode>
-  );
+  )
 }
 
-bootstrap();
+bootstrap()
