@@ -4,12 +4,28 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import App from './pages/App'
 import './styles/globals.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/*" element={<App />} />
-      </Routes>
-    </BrowserRouter>
-  </React.StrictMode>
-)
+async function loadConfig() {
+  try {
+    const res = await fetch('/config.json', { cache: 'no-store' });
+    const cfg = await res.json();
+    (window as any).__APP_CONFIG__ = cfg;
+  } catch {
+    (window as any).__APP_CONFIG__ = {};
+  }
+}
+
+async function bootstrap() {
+  await loadConfig();
+  
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/*" element={<App />} />
+        </Routes>
+      </BrowserRouter>
+    </React.StrictMode>
+  );
+}
+
+bootstrap();
