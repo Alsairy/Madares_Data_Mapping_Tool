@@ -108,6 +108,10 @@ public class PipelineService : IPipelineService
                            nCols.ContainsKey("parent_id") ? nCols["parent_id"] : null;
         string nParentName = nCols.ContainsKey("parent_name") ? nCols["parent_name"] :
                              nCols.ContainsKey("fullname_parent_ar") ? nCols["fullname_parent_ar"] : null;
+        string nGrade = nCols.ContainsKey("grade") ? nCols["grade"] :
+                        nCols.ContainsKey("class") ? nCols["class"] : null;
+        string nParentPhone = nCols.ContainsKey("parent_phone") ? nCols["parent_phone"] :
+                              nCols.ContainsKey("phone") ? nCols["phone"] : null;
 
         string mCR = mCols.ContainsKey("cr") ? mCols["cr"] :
                      mCols.ContainsKey("commercial_registration") ? mCols["commercial_registration"] : m.Columns[0].ColumnName;
@@ -140,19 +144,13 @@ public class PipelineService : IPipelineService
                 crToMadaris[cr] = (madarisId ?? "", name);
         }
 
-        // Prepare output workbooks
-        using var studentsWb = new XLWorkbook();
-        using var parentsWb = new XLWorkbook();
-        var studentsWs = studentsWb.Worksheets.Add("students_master");
-        var parentsWs = parentsWb.Worksheets.Add("parents_master");
+        using var consolidatedWb = new XLWorkbook();
+        var consolidatedWs = consolidatedWb.Worksheets.Add("Students_and_Parents");
 
-        // Headers
-        var studHeaders = new[]{"Ministry_Student_ID","Student_Name","Mapped_CR","Mapped_Madaris_School_ID","Mapped_Madaris_School_Name","Ministry_School_ID","Match_Method","Confidence","Issues"};
-        for (int i=0;i<studHeaders.Length;i++) studentsWs.Cell(1, i+1).Value = studHeaders[i];
-        var parHeaders = new[]{"Ministry_Parent_ID","Parent_Name","Mapped_CR","Mapped_Madaris_School_ID","Mapped_Madaris_School_Name","Ministry_School_ID","Match_Method","Confidence","Issues"};
-        for (int i=0;i<parHeaders.Length;i++) parentsWs.Cell(1, i+1).Value = parHeaders[i];
+        var consolidatedHeaders = new[]{"Record_Type","Ministry_ID","Name","Mapped_CR","Mapped_Madaris_School_ID","Mapped_Madaris_School_Name","Ministry_School_ID","Grade","Parent_Phone","Match_Method","Confidence","Issues"};
+        for (int i=0;i<consolidatedHeaders.Length;i++) consolidatedWs.Cell(1, i+1).Value = consolidatedHeaders[i];
 
-        int srow = 2, prow = 2;
+        int consolidatedRow = 2;
         int schoolsMatched = 0, studentsPrepared = 0, parentsPrepared = 0, exceptions = 0;
 
         // Iterate Noor rows and map to Madaris via Tarkhees bridge
@@ -161,6 +159,8 @@ public class PipelineService : IPipelineService
             var minSch = nMinSchool != null ? r[nMinSchool]?.ToString()?.Trim() : null;
             var studId = nStudId != null ? r[nStudId]?.ToString()?.Trim() : null;
             var studName = r[nStudName]?.ToString()?.Trim();
+            var grade = nGrade != null ? r[nGrade]?.ToString()?.Trim() : "";
+            var parentPhone = nParentPhone != null ? r[nParentPhone]?.ToString()?.Trim() : "";
 
             // School mapping
             string matchMethod = ""; double confidence = 0.0; string issues = "";
@@ -187,115 +187,58 @@ public class PipelineService : IPipelineService
 
             if (!string.IsNullOrEmpty(studId))
             {
-                studentsWs.Cell(srow,1).SetValue(SanitizeForExcel(studId));
-                studentsWs.Cell(srow,2).SetValue(SanitizeForExcel(studName));
-                studentsWs.Cell(srow,3).SetValue(SanitizeForExcel(mappedCR));
-                studentsWs.Cell(srow,4).SetValue(SanitizeForExcel(mappedMadarisId));
-                studentsWs.Cell(srow,5).SetValue(SanitizeForExcel(mappedMadarisName));
-                studentsWs.Cell(srow,6).SetValue(SanitizeForExcel(minSch ?? ""));
-                studentsWs.Cell(srow,7).SetValue(matchMethod);
-                studentsWs.Cell(srow,8).SetValue(confidence);
-                studentsWs.Cell(srow,9).SetValue(SanitizeForExcel(issues));
-                srow++; studentsPrepared++;
+                consolidatedWs.Cell(consolidatedRow,1).SetValue("Student");
+                consolidatedWs.Cell(consolidatedRow,2).SetValue(SanitizeForExcel(studId));
+                consolidatedWs.Cell(consolidatedRow,3).SetValue(SanitizeForExcel(studName));
+                consolidatedWs.Cell(consolidatedRow,4).SetValue(SanitizeForExcel(mappedCR));
+                consolidatedWs.Cell(consolidatedRow,5).SetValue(SanitizeForExcel(mappedMadarisId));
+                consolidatedWs.Cell(consolidatedRow,6).SetValue(SanitizeForExcel(mappedMadarisName));
+                consolidatedWs.Cell(consolidatedRow,7).SetValue(SanitizeForExcel(minSch ?? ""));
+                consolidatedWs.Cell(consolidatedRow,8).SetValue(SanitizeForExcel(grade));
+                consolidatedWs.Cell(consolidatedRow,9).SetValue(SanitizeForExcel(parentPhone));
+                consolidatedWs.Cell(consolidatedRow,10).SetValue(matchMethod);
+                consolidatedWs.Cell(consolidatedRow,11).SetValue(confidence);
+                consolidatedWs.Cell(consolidatedRow,12).SetValue(SanitizeForExcel(issues));
+                consolidatedRow++; studentsPrepared++;
             }
 
-            // Parent row (optional if file has parent columns)
             if (!string.IsNullOrEmpty(nParentId))
             {
                 var pid = r[nParentId]?.ToString()?.Trim();
                 var pname = !string.IsNullOrEmpty(nParentName) ? r[nParentName]?.ToString()?.Trim() : "";
                 if (!string.IsNullOrEmpty(pid))
                 {
-                    parentsWs.Cell(prow,1).SetValue(SanitizeForExcel(pid));
-                    parentsWs.Cell(prow,2).SetValue(SanitizeForExcel(pname));
-                    parentsWs.Cell(prow,3).SetValue(SanitizeForExcel(mappedCR));
-                    parentsWs.Cell(prow,4).SetValue(SanitizeForExcel(mappedMadarisId));
-                    parentsWs.Cell(prow,5).SetValue(SanitizeForExcel(mappedMadarisName));
-                    parentsWs.Cell(prow,6).SetValue(SanitizeForExcel(minSch ?? ""));
-                    parentsWs.Cell(prow,7).SetValue(matchMethod);
-                    parentsWs.Cell(prow,8).SetValue(confidence);
-                    parentsWs.Cell(prow,9).SetValue(SanitizeForExcel(issues));
-                    prow++; parentsPrepared++;
+                    consolidatedWs.Cell(consolidatedRow,1).SetValue("Parent");
+                    consolidatedWs.Cell(consolidatedRow,2).SetValue(SanitizeForExcel(pid));
+                    consolidatedWs.Cell(consolidatedRow,3).SetValue(SanitizeForExcel(pname));
+                    consolidatedWs.Cell(consolidatedRow,4).SetValue(SanitizeForExcel(mappedCR));
+                    consolidatedWs.Cell(consolidatedRow,5).SetValue(SanitizeForExcel(mappedMadarisId));
+                    consolidatedWs.Cell(consolidatedRow,6).SetValue(SanitizeForExcel(mappedMadarisName));
+                    consolidatedWs.Cell(consolidatedRow,7).SetValue(SanitizeForExcel(minSch ?? ""));
+                    consolidatedWs.Cell(consolidatedRow,8).SetValue("");
+                    consolidatedWs.Cell(consolidatedRow,9).SetValue(SanitizeForExcel(parentPhone));
+                    consolidatedWs.Cell(consolidatedRow,10).SetValue(matchMethod);
+                    consolidatedWs.Cell(consolidatedRow,11).SetValue(confidence);
+                    consolidatedWs.Cell(consolidatedRow,12).SetValue(SanitizeForExcel(issues));
+                    consolidatedRow++; parentsPrepared++;
                 }
             }
         }
 
-        // Autosize
-        studentsWs.Columns().AdjustToContents();
-        parentsWs.Columns().AdjustToContents();
+        // Autosize and save consolidated export
+        consolidatedWs.Columns().AdjustToContents();
+        var consolidatedPath = Path.Combine(exportDir, "madaris_injection_data.xlsx");
+        consolidatedWb.SaveAs(consolidatedPath);
 
-        // Save exports
-        var studentsPath = Path.Combine(exportDir, "students_master.xlsx");
-        var parentsPath = Path.Combine(exportDir, "parents_master.xlsx");
-        studentsWb.SaveAs(studentsPath);
-        parentsWb.SaveAs(parentsPath);
-
-        // Mapping report (basic CSV)
-        var mappingReport = Path.Combine(exportDir, "mapping_report.csv");
-        await File.WriteAllTextAsync(mappingReport, "metric,value\n" +
+        var summaryReport = Path.Combine(exportDir, "processing_summary.csv");
+        await File.WriteAllTextAsync(summaryReport, "metric,value\n" +
             $"schools_matched,{schoolsMatched}\n" +
             $"students_prepared,{studentsPrepared}\n" +
             $"parents_prepared,{parentsPrepared}\n" +
-            $"exceptions,{exceptions}\n"
+            $"exceptions,{exceptions}\n" +
+            $"total_records,{studentsPrepared + parentsPrepared}\n" +
+            $"success_rate,{(studentsPrepared + parentsPrepared > 0 ? Math.Round((double)(studentsPrepared + parentsPrepared - exceptions) / (studentsPrepared + parentsPrepared) * 100, 2) : 0)}%\n"
         );
-
-        using var studentParentLinksWb = new XLWorkbook();
-        var linksWs = studentParentLinksWb.Worksheets.Add("student_parent_links");
-        var linkHeaders = new[]{"Ministry_Student_ID", "Ministry_Parent_ID", "Mapped_CR", "Mapped_Madaris_School_ID", "Student_Name", "Parent_Name", "Match_Method", "Confidence"};
-        for (int i=0;i<linkHeaders.Length;i++) linksWs.Cell(1, i+1).Value = linkHeaders[i];
-
-        int linkRow = 2;
-        foreach (DataRow r in n.Rows)
-        {
-            var minSch = nMinSchool != null ? r[nMinSchool]?.ToString()?.Trim() : null;
-            var studId = nStudId != null ? r[nStudId]?.ToString()?.Trim() : null;
-            var studName = r[nStudName]?.ToString()?.Trim();
-            var pid = nParentId != null ? r[nParentId]?.ToString()?.Trim() : null;
-            var pname = !string.IsNullOrEmpty(nParentName) ? r[nParentName]?.ToString()?.Trim() : "";
-
-            if (!string.IsNullOrEmpty(studId) && !string.IsNullOrEmpty(pid))
-            {
-                string mappedCR = "";
-                string mappedMadarisId = "";
-                string matchMethod = "NoMatch";
-                double confidence = 0.0;
-
-                if (!string.IsNullOrEmpty(minSch) && minSchoolToCR.TryGetValue(minSch, out var cr))
-                {
-                    mappedCR = cr;
-                    if (crToMadaris.TryGetValue(cr, out var mm))
-                    {
-                        mappedMadarisId = mm.madarisId;
-                        matchMethod = "TarkheesBridge";
-                        confidence = 0.99;
-                    }
-                    else
-                    {
-                        matchMethod = "CRNotInMadaris";
-                        confidence = 0.8;
-                    }
-                }
-                else
-                {
-                    matchMethod = "NoMinistrySchoolIdOrNoBridge";
-                    confidence = 0.5;
-                }
-
-                linksWs.Cell(linkRow,1).SetValue(SanitizeForExcel(studId));
-                linksWs.Cell(linkRow,2).SetValue(SanitizeForExcel(pid));
-                linksWs.Cell(linkRow,3).SetValue(SanitizeForExcel(mappedCR));
-                linksWs.Cell(linkRow,4).SetValue(SanitizeForExcel(mappedMadarisId));
-                linksWs.Cell(linkRow,5).SetValue(SanitizeForExcel(studName));
-                linksWs.Cell(linkRow,6).SetValue(SanitizeForExcel(pname));
-                linksWs.Cell(linkRow,7).SetValue(matchMethod);
-                linksWs.Cell(linkRow,8).SetValue(confidence);
-                linkRow++;
-            }
-        }
-
-        linksWs.Columns().AdjustToContents();
-        var studentParentLinksPath = Path.Combine(exportDir, "student_parent_links.xlsx");
-        studentParentLinksWb.SaveAs(studentParentLinksPath);
 
         // Register batch for audit
         var batch = new BatchLoadEntity {
