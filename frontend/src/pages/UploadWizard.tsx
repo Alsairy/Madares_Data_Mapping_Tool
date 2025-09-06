@@ -1,6 +1,30 @@
 import React, { useState, useRef } from 'react'
 import api from '../services/api'
 
+type UploadSource = 'tarkhees' | 'noor' | 'madaris'
+
+type UploadResult = {
+  uploadId: string
+  filename: string
+  size?: number
+}
+
+type PipelineProcessRequest = {
+  TarkheesUploadId: string
+  NoorUploadId: string
+  MadarisUploadId: string
+  UploadedBy?: string
+}
+
+type PipelineProcessResult = {
+  jobId: string
+  schoolsMatched: number
+  studentsPrepared: number
+  parentsPrepared: number
+  exceptions: number
+  overallDqScore?: number
+}
+
 interface FileUploadState {
   file: File | null
   uploading: boolean
@@ -10,32 +34,25 @@ interface FileUploadState {
 }
 
 const UploadWizard: React.FC = () => {
-  const [tarkhees, setTarkhees] = useState<FileUploadState>({
-    file: null,
-    uploading: false,
-    uploaded: false,
-    error: null,
-    uploadId: null
-  })
+  const [tarkheesUpload, setTarkheesUpload] = useState<UploadResult | null>(null)
+  const [noorUpload, setNoorUpload] = useState<UploadResult | null>(null)
+  const [madarisUpload, setMadarisUpload] = useState<UploadResult | null>(null)
   
-  const [noor, setNoor] = useState<FileUploadState>({
-    file: null,
-    uploading: false,
-    uploaded: false,
-    error: null,
-    uploadId: null
-  })
+  const [tarkheesFile, setTarkheesFile] = useState<File | null>(null)
+  const [noorFile, setNoorFile] = useState<File | null>(null)
+  const [madarisFile, setMadarisFile] = useState<File | null>(null)
   
-  const [madaris, setMadaris] = useState<FileUploadState>({
-    file: null,
-    uploading: false,
-    uploaded: false,
-    error: null,
-    uploadId: null
-  })
+  const [tarkheesUploading, setTarkheesUploading] = useState(false)
+  const [noorUploading, setNoorUploading] = useState(false)
+  const [madarisUploading, setMadarisUploading] = useState(false)
+  
+  const [tarkheesError, setTarkheesError] = useState<string | null>(null)
+  const [noorError, setNoorError] = useState<string | null>(null)
+  const [madarisError, setMadarisError] = useState<string | null>(null)
 
+  const [processResult, setProcessResult] = useState<PipelineProcessResult | null>(null)
   const [processing, setProcessing] = useState(false)
-  const [jobId, setJobId] = useState<string | null>(null)
+  const [processError, setProcessError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState<string | null>(null)
 
   const fileInputRefs = {
@@ -94,88 +111,115 @@ const UploadWizard: React.FC = () => {
     setDragOver(null)
   }
 
-  const uploadFile = async (
-    file: File,
-    endpoint: string,
-    setter: React.Dispatch<React.SetStateAction<FileUploadState>>
-  ) => {
-    setter(prev => ({ ...prev, uploading: true, error: null }))
-    
-    const formData = new FormData()
-    formData.append('file', file)
 
-    try {
-      const response = await api.post(endpoint, formData, {
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 1))
-          console.log(`Upload progress: ${percentCompleted}%`)
-        }
-      })
-      
-      setter(prev => ({ 
-        ...prev, 
-        uploading: false, 
-        uploaded: true, 
-        uploadId: response.data.uploadId 
-      }))
-      console.log('Upload successful:', response.data)
-    } catch (error: any) {
-      console.error('Upload failed:', error)
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          error.message || 
-                          'Upload failed. Please try again.'
-      setter(prev => ({ 
-        ...prev, 
-        uploading: false, 
-        error: errorMessage,
-        uploadId: null
-      }))
-    }
-  }
-
-  const handleUpload = async (
-    state: FileUploadState,
-    endpoint: string,
-    setter: React.Dispatch<React.SetStateAction<FileUploadState>>
-  ) => {
-    if (!state.file || state.error) return
-    await uploadFile(state.file, endpoint, setter)
-  }
-
-  const runPipeline = async () => {
-    if (!tarkhees.uploaded || !noor.uploaded || !madaris.uploaded) {
-      alert('Please upload all three files first')
+  const runProcess = async () => {
+    setProcessError(null)
+    if (!tarkheesUpload?.uploadId || !noorUpload?.uploadId || !madarisUpload?.uploadId) {
+      setProcessError('Please upload all three files first.')
       return
     }
-
-    if (!tarkhees.uploadId || !noor.uploadId || !madaris.uploadId) {
-      alert('Upload IDs missing. Please re-upload the files.')
-      return
-    }
-
     setProcessing(true)
-    
-    const requestBody = {
-      TarkheesUploadId: tarkhees.uploadId,
-      NoorUploadId: noor.uploadId,
-      MadarisUploadId: madaris.uploadId,
-      UploadedBy: 'user'
-    }
-
     try {
-      const response = await api.post('/api/pipeline/process', requestBody, {
+      const payload: PipelineProcessRequest = {
+        TarkheesUploadId: tarkheesUpload.uploadId,
+        NoorUploadId: noorUpload.uploadId,
+        MadarisUploadId: madarisUpload.uploadId,
+        UploadedBy: 'ui-user'
+      }
+      const res = await api.post('/api/pipeline/process', payload, {
         headers: { 'Content-Type': 'application/json' }
       })
-      setJobId(response.data.jobId || response.data.batchId || 'Processing started')
+      setProcessResult(res.data as PipelineProcessResult)
+    } catch (e: any) {
+      setProcessError(e?.message || 'Failed to process batch')
+    } finally {
       setProcessing(false)
+    }
+  }
+
+  const uploadFileToAPI = async (source: UploadSource, file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    const res = await api.post(`/api/pipeline/ingest/${source}`, form)
+    const data = res.data as { uploadId: string }
+    return { uploadId: data.uploadId, filename: file.name, size: file.size } as UploadResult
+  }
+
+  const onUploadTarkhees = async (file?: File) => {
+    if (!file) return
+    const error = validateFile(file)
+    setTarkheesError(error)
+    setTarkheesFile(file)
+    if (error) return
+    
+    setTarkheesUploading(true)
+    try {
+      const result = await uploadFileToAPI('tarkhees', file)
+      setTarkheesUpload(result)
+      setTarkheesError(null)
     } catch (error: any) {
-      console.error('Pipeline failed:', error)
-      setProcessing(false)
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.error || 
-                          'Pipeline processing failed. Please try again.'
-      alert(errorMessage)
+      setTarkheesError(error?.message || 'Upload failed')
+      setTarkheesUpload(null)
+    } finally {
+      setTarkheesUploading(false)
+    }
+  }
+
+  const onUploadNoor = async (file?: File) => {
+    if (!file) return
+    const error = validateFile(file)
+    setNoorError(error)
+    setNoorFile(file)
+    if (error) return
+    
+    setNoorUploading(true)
+    try {
+      const result = await uploadFileToAPI('noor', file)
+      setNoorUpload(result)
+      setNoorError(null)
+    } catch (error: any) {
+      setNoorError(error?.message || 'Upload failed')
+      setNoorUpload(null)
+    } finally {
+      setNoorUploading(false)
+    }
+  }
+
+  const onUploadMadaris = async (file?: File) => {
+    if (!file) return
+    const error = validateFile(file)
+    setMadarisError(error)
+    setMadarisFile(file)
+    if (error) return
+    
+    setMadarisUploading(true)
+    try {
+      const result = await uploadFileToAPI('madaris', file)
+      setMadarisUpload(result)
+      setMadarisError(null)
+    } catch (error: any) {
+      setMadarisError(error?.message || 'Upload failed')
+      setMadarisUpload(null)
+    } finally {
+      setMadarisUploading(false)
+    }
+  }
+
+  const downloadFile = async (filename: string) => {
+    if (!processResult?.jobId) return
+    try {
+      const response = await api.get(`/api/pipeline/${processResult.jobId}/download/${filename}`, {
+        responseType: 'blob'
+      })
+      const url = window.URL.createObjectURL(new Blob([response.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', filename)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch (error) {
+      console.error('Download failed:', error)
     }
   }
 
@@ -206,7 +250,17 @@ const UploadWizard: React.FC = () => {
       
       <div 
         className={`drop-zone ${dragOver === type ? 'drag-over' : ''} ${state.uploaded ? 'success' : ''}`}
-        onDrop={(e) => handleDrop(e, type === 'tarkhees' ? setTarkhees : type === 'noor' ? setNoor : setMadaris)}
+        onDrop={(e) => {
+          e.preventDefault()
+          const files = e.dataTransfer.files
+          if (files.length > 0) {
+            const file = files[0]
+            if (type === 'tarkhees') onUploadTarkhees(file)
+            else if (type === 'noor') onUploadNoor(file)
+            else if (type === 'madaris') onUploadMadaris(file)
+          }
+          setDragOver(null)
+        }}
         onDragOver={(e) => handleDragOver(e, type)}
         onDragLeave={handleDragLeave}
         onClick={() => inputRef.current?.click()}
@@ -277,8 +331,8 @@ const UploadWizard: React.FC = () => {
     </div>
   )
 
-  const allFilesUploaded = tarkhees.uploaded && noor.uploaded && madaris.uploaded
-  const hasErrors = !!(tarkhees.error || noor.error || madaris.error)
+  const allFilesUploaded = !!(tarkheesUpload && noorUpload && madarisUpload)
+  const hasErrors = !!(tarkheesError || noorError || madarisError)
 
   return (
     <div className="upload-wizard">
@@ -289,15 +343,15 @@ const UploadWizard: React.FC = () => {
             <p>Upload the three required files to begin intelligent data processing and mapping</p>
             <div className="progress-indicator">
               <div className="step-indicators">
-                <div className={`step ${tarkhees.uploaded ? 'completed' : tarkhees.file ? 'active' : ''}`}>
+                <div className={`step ${tarkheesUpload ? 'completed' : tarkheesFile ? 'active' : ''}`}>
                   <span className="step-number">1</span>
                   <span className="step-label">Tarkhees</span>
                 </div>
-                <div className={`step ${noor.uploaded ? 'completed' : noor.file ? 'active' : ''}`}>
+                <div className={`step ${noorUpload ? 'completed' : noorFile ? 'active' : ''}`}>
                   <span className="step-number">2</span>
                   <span className="step-label">Noor</span>
                 </div>
-                <div className={`step ${madaris.uploaded ? 'completed' : madaris.file ? 'active' : ''}`}>
+                <div className={`step ${madarisUpload ? 'completed' : madarisFile ? 'active' : ''}`}>
                   <span className="step-number">3</span>
                   <span className="step-label">Madaris</span>
                 </div>
@@ -311,9 +365,18 @@ const UploadWizard: React.FC = () => {
             <FileUploadCard
               title="📋 Tarkhees License File"
               description="Ministry licensing data with school registration details"
-              state={tarkhees}
-              onFileSelect={(e) => handleFileSelect(e, setTarkhees)}
-              onUpload={() => handleUpload(tarkhees, '/api/pipeline/ingest/tarkhees', setTarkhees)}
+              state={{
+                file: tarkheesFile,
+                uploading: tarkheesUploading,
+                uploaded: !!tarkheesUpload,
+                error: tarkheesError,
+                uploadId: tarkheesUpload?.uploadId || null
+              }}
+              onFileSelect={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onUploadTarkhees(file)
+              }}
+              onUpload={() => {}}
               endpoint="/api/pipeline/ingest/tarkhees"
               type="tarkhees"
               inputRef={fileInputRefs.tarkhees}
@@ -322,9 +385,18 @@ const UploadWizard: React.FC = () => {
             <FileUploadCard
               title="👥 Noor Roster File"
               description="Student enrollment data from the Noor education system"
-              state={noor}
-              onFileSelect={(e) => handleFileSelect(e, setNoor)}
-              onUpload={() => handleUpload(noor, '/api/pipeline/ingest/noor', setNoor)}
+              state={{
+                file: noorFile,
+                uploading: noorUploading,
+                uploaded: !!noorUpload,
+                error: noorError,
+                uploadId: noorUpload?.uploadId || null
+              }}
+              onFileSelect={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onUploadNoor(file)
+              }}
+              onUpload={() => {}}
               endpoint="/api/pipeline/ingest/noor"
               type="noor"
               inputRef={fileInputRefs.noor}
@@ -333,9 +405,18 @@ const UploadWizard: React.FC = () => {
             <FileUploadCard
               title="🏫 Madaris Schools File"
               description="School directory and administrative information"
-              state={madaris}
-              onFileSelect={(e) => handleFileSelect(e, setMadaris)}
-              onUpload={() => handleUpload(madaris, '/api/pipeline/ingest/madaris', setMadaris)}
+              state={{
+                file: madarisFile,
+                uploading: madarisUploading,
+                uploaded: !!madarisUpload,
+                error: madarisError,
+                uploadId: madarisUpload?.uploadId || null
+              }}
+              onFileSelect={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onUploadMadaris(file)
+              }}
+              onUpload={() => {}}
               endpoint="/api/pipeline/ingest/madaris"
               type="madaris"
               inputRef={fileInputRefs.madaris}
@@ -365,7 +446,7 @@ const UploadWizard: React.FC = () => {
             </div>
 
             <button 
-              onClick={runPipeline}
+              onClick={runProcess}
               disabled={!allFilesUploaded || processing || hasErrors}
               className={`run-pipeline-btn ${allFilesUploaded && !hasErrors ? 'ready' : ''}`}
             >
@@ -382,16 +463,33 @@ const UploadWizard: React.FC = () => {
               )}
             </button>
             
-            {jobId && (
+            {processResult && (
               <div className="job-status">
                 <div className="status-header">
                   <span className="success-icon">🎉</span>
-                  <strong>Pipeline Started Successfully!</strong>
+                  <strong>Pipeline Completed Successfully!</strong>
                 </div>
                 <div className="job-details">
-                  <span>Job ID: <code>{jobId}</code></span>
-                  <p>Your data is being processed. You can monitor progress in the dashboard.</p>
+                  <span>Job ID: <code>{processResult.jobId}</code></span>
+                  <p>Schools Matched: {processResult.schoolsMatched}</p>
+                  <p>Students Prepared: {processResult.studentsPrepared}</p>
+                  <p>Parents Prepared: {processResult.parentsPrepared}</p>
+                  <p>Exceptions: {processResult.exceptions}</p>
+                  {processResult.overallDqScore && <p>DQ Score: {processResult.overallDqScore}%</p>}
                 </div>
+                <div className="download-section">
+                  <button onClick={() => downloadFile('students_master.xlsx')}>Download Students</button>
+                  <button onClick={() => downloadFile('parents_master.xlsx')}>Download Parents</button>
+                  <button onClick={() => downloadFile('student_parent_links.xlsx')}>Download Links</button>
+                  <button onClick={() => downloadFile('mapping_report.csv')}>Download Report</button>
+                </div>
+              </div>
+            )}
+
+            {processError && (
+              <div className="error-message">
+                <span className="error-icon">⚠️</span>
+                {processError}
               </div>
             )}
           </div>

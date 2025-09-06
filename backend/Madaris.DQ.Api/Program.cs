@@ -51,12 +51,14 @@ builder.Services.AddCors(options => {
     options.AddPolicy("AllowFrontend", policy => policy
         .WithOrigins(
             "https://data-mapping-assessment-app-x5jb4izt.devinapps.com",
+            "https://framework-says-thomson-pcs.trycloudflare.com",
+            "https://spa-circular-welsh-citizen.trycloudflare.com",
+            "https://search-hc-feelings-loaded.trycloudflare.com",
             "http://localhost:3000",
             "http://localhost:5173"
         )
         .AllowAnyHeader()
         .AllowAnyMethod()
-        .SetIsOriginAllowed(origin => true)
         .AllowCredentials()
         .WithExposedHeaders("Content-Length", "Content-Range", "Content-Disposition"));
 });

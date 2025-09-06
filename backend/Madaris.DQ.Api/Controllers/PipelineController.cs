@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Cors;
 using Madaris.DQ.Api.Services;
 using Madaris.DQ.Api.Models;
 
@@ -62,7 +63,15 @@ public class PipelineController : ControllerBase
         return Ok(new { uploadId, fileName = file.FileName, message = "Madaris file uploaded successfully" });
     }
 
+    [HttpOptions("process")]
+    [EnableCors("AllowFrontend")]
+    public IActionResult ProcessFilesOptions()
+    {
+        return Ok();
+    }
+
     [HttpPost("process")]
+    [EnableCors("AllowFrontend")]
     public async Task<IActionResult> ProcessFiles([FromBody] ProcessFilesRequest request)
     {
         if (string.IsNullOrEmpty(request.TarkheesUploadId) || 
@@ -89,6 +98,7 @@ public class PipelineController : ControllerBase
 
         return Ok(result);
     }
+
 
     [HttpPost("run")]
     [Consumes("multipart/form-data")]
