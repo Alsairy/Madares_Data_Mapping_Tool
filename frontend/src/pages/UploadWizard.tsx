@@ -6,6 +6,7 @@ interface FileUploadState {
   uploading: boolean
   uploaded: boolean
   error: string | null
+  uploadId: string | null
 }
 
 const UploadWizard: React.FC = () => {
@@ -13,21 +14,24 @@ const UploadWizard: React.FC = () => {
     file: null,
     uploading: false,
     uploaded: false,
-    error: null
+    error: null,
+    uploadId: null
   })
   
   const [noor, setNoor] = useState<FileUploadState>({
     file: null,
     uploading: false,
     uploaded: false,
-    error: null
+    error: null,
+    uploadId: null
   })
   
   const [madaris, setMadaris] = useState<FileUploadState>({
     file: null,
     uploading: false,
     uploaded: false,
-    error: null
+    error: null,
+    uploadId: null
   })
 
   const [processing, setProcessing] = useState(false)
@@ -62,7 +66,7 @@ const UploadWizard: React.FC = () => {
     const file = event.target.files?.[0]
     if (file) {
       const error = validateFile(file)
-      setter(prev => ({ ...prev, file, error, uploaded: false }))
+      setter(prev => ({ ...prev, file, error, uploaded: false, uploadId: null }))
     }
   }
 
@@ -76,7 +80,7 @@ const UploadWizard: React.FC = () => {
     const file = event.dataTransfer.files[0]
     if (file) {
       const error = validateFile(file)
-      setter(prev => ({ ...prev, file, error, uploaded: false }))
+      setter(prev => ({ ...prev, file, error, uploaded: false, uploadId: null }))
     }
   }
 
@@ -108,7 +112,12 @@ const UploadWizard: React.FC = () => {
         }
       })
       
-      setter(prev => ({ ...prev, uploading: false, uploaded: true }))
+      setter(prev => ({ 
+        ...prev, 
+        uploading: false, 
+        uploaded: true, 
+        uploadId: response.data.uploadId 
+      }))
       console.log('Upload successful:', response.data)
     } catch (error: any) {
       console.error('Upload failed:', error)
@@ -119,7 +128,8 @@ const UploadWizard: React.FC = () => {
       setter(prev => ({ 
         ...prev, 
         uploading: false, 
-        error: errorMessage 
+        error: errorMessage,
+        uploadId: null
       }))
     }
   }
@@ -139,15 +149,24 @@ const UploadWizard: React.FC = () => {
       return
     }
 
+    if (!tarkhees.uploadId || !noor.uploadId || !madaris.uploadId) {
+      alert('Upload IDs missing. Please re-upload the files.')
+      return
+    }
+
     setProcessing(true)
     
-    const formData = new FormData()
-    if (tarkhees.file) formData.append('licenseFile', tarkhees.file)
-    if (noor.file) formData.append('noorRosterFile', noor.file)
-    if (madaris.file) formData.append('madarisSchoolsFile', madaris.file)
+    const requestBody = {
+      TarkheesUploadId: tarkhees.uploadId,
+      NoorUploadId: noor.uploadId,
+      MadarisUploadId: madaris.uploadId,
+      UploadedBy: 'user'
+    }
 
     try {
-      const response = await api.post('/api/pipeline/run', formData)
+      const response = await api.post('/api/pipeline/process', requestBody, {
+        headers: { 'Content-Type': 'application/json' }
+      })
       setJobId(response.data.jobId || response.data.batchId || 'Processing started')
       setProcessing(false)
     } catch (error: any) {
