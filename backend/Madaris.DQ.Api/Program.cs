@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.Features;
 using Madaris.DQ.Api.Data;
 using Madaris.DQ.Api.Services;
 using Madaris.DQ.Api.Swagger;
@@ -30,6 +31,14 @@ builder.Services.AddScoped<IProfilesService, ProfilesService>();
 builder.Services.AddScoped<IInjectionService, InjectionService>();
 builder.Services.AddScoped<IExceptionsService, ExceptionsService>();
 builder.Services.AddScoped<IPipelineService, PipelineService>();
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 200L * 1024 * 1024;
+    options.ValueLengthLimit = int.MaxValue;
+    options.ValueCountLimit = int.MaxValue;
+    options.KeyLengthLimit = int.MaxValue;
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
