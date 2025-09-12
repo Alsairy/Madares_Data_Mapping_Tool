@@ -478,10 +478,8 @@ const UploadWizard: React.FC = () => {
                   {processResult.overallDqScore && <p>DQ Score: {processResult.overallDqScore}%</p>}
                 </div>
                 <div className="download-section">
-                  <button onClick={() => downloadFile('students_master.xlsx')}>Download Students</button>
-                  <button onClick={() => downloadFile('parents_master.xlsx')}>Download Parents</button>
-                  <button onClick={() => downloadFile('student_parent_links.xlsx')}>Download Links</button>
-                  <button onClick={() => downloadFile('mapping_report.csv')}>Download Report</button>
+                  <button onClick={() => downloadFile('madaris_injection_data.xlsx')}>Download Consolidated Data for Madaris Injection</button>
+                  <button onClick={() => downloadFile('processing_summary.csv')}>Download Processing Summary</button>
                 </div>
               </div>
             )}
